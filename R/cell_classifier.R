@@ -1,6 +1,6 @@
 #' @title cell_classifier
 #'
-#' @description Uses two step claasification method to separate healthy cells from damaged/dying cells.
+#' @description Uses two steps classification method to separate healthy cells from damaged/dying cells.
 #' The mixture of regressions is used to obtain the primary labels in identifying two populations.
 #' Later identified decision boundary is used to label dead cells positively and train one-class Support Vector Machines on them to identify ambiguous cells from unlabeled (= healthy) data
 #'
