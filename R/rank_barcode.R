@@ -158,6 +158,9 @@ rank_barcode = function(counts, input_type = "UMI", psi.min = 1, psi.max = 20, t
 	legend("topright", box.lty=0, legend = as.expression(bquote("n"^"Lower" ~ " = " ~ .(nrow(bcranks[ bcranks$counts >= exp(lower),])))))
   }
 
+  #stop the cluster
+  if (ncpus > 1) { stopCluster(cl) }
+      
   #output
   if(threshold){
     output = list(ranks = bcranks, lower.threshold = exp(lower))
