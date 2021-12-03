@@ -37,8 +37,6 @@ rank_barcode = function(counts, input_type = "UMI", psi.min = 1, psi.max = 20, t
     stop("doParallel library not installed")
   } else if (!require(parallel)) {
     stop("parallel library not installed")
-  } else if (!require(BiocParallel)) {
-    stop("BiocParallel library not installed")
   }
 
   #checking if the user chose to use the plot format
