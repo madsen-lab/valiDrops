@@ -2,7 +2,7 @@
 #'
 #' @description Function ranks UMI/genes according to their expression levels
 #'
-#' @param object a (dense or sparse) matrix containing gene counts
+#' @param counts a (dense or sparse) matrix containing gene counts
 #' @param input_type an object to be ranked (e.g., UMI or genes)
 #' @param psi.min a number indicating the lowest number of breakpoints to try when approximating the curve
 #' @param psi.max a number indicating the highest number of breakpoints to try when approximating the curve
@@ -22,7 +22,7 @@
 #' @import parallel
 
 #barcode ranking and quality filtering
-rank_barcode = function(object, input_type = "UMI", psi.min = 1, psi.max = 20, threshold = TRUE, ncpus = "detect", plot = TRUE, plot_format = "none", directory = FALSE){
+rank_barcode = function(counts, input_type = "UMI", psi.min = 1, psi.max = 20, threshold = TRUE, ncpus = "detect", plot = TRUE, plot_format = "none", directory = FALSE){
 
   #library dependencies
   if (!require(Matrix)){
