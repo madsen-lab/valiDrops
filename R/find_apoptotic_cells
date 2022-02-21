@@ -1,4 +1,4 @@
- #' @title find_apoptotic_cells
+#' @title find_apoptotic_cells
 #'
 #' @description Function that uses two state-of-art methods (isolation Forest and autoencoder) to detect apoptotic cells in the single-cell dataset.
 #'
