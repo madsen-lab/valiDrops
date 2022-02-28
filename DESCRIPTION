@@ -1,27 +1,39 @@
-Package: scGenomics
+Package: valiDrops
 Type: Package
-Title: Quality control tool for the single-cell genomics
+Title: valiDrops
 Version: 0.1.0
 Authors@R: c(
-	person("Jesper Grud Skat", "Madsen", email = "jgsm@bmb.sdu.dk", role = c("cre", "aut")),
+	person("Jesper Grud Skat", "Madsen", email = "jgsm@imada.sdu.dk", role = c("cre", "aut")),
 	person("Gabija", "Kavaliauskaitė", email = "gkav@sdu.dk", role = "aut"))
-Maintainer: The package maintainer jgsm@bmb.sdu.dk
-Description: Quality control tool for single-cell genomics data analysis.    Ranks genes to their expression levels, by using 'Term Frequency - Inverse Document Frequency' statistical measure identifies key genes for cells.    Filters cells based on mitochondrial fraction continent to identify healthy/dying cells. 
+Maintainer: Jesper Grud Skat Madsen <jgsm@imada.sdu.dk>
+Description: Quality control tool for single-cell genomics data analysis. 
 License: GPL-3
 URL: https://github.com/gabi0823/scGenomics
 Depends: 
 	R (>= 4.0.2)
 Imports:
-	Matrix, 
-	Seurat,
-	inflection, 
-	sparseMatrixStats,
-	segmented,
-	foreach,
-	doParallel, 
-	parallel,
-	scry,
-	robustbase
+  MASS,
+  Matrix,
+  inflection,
+  matrixTests,
+  mixtools,
+  mygene,
+  robustbase,
+  scry,
+  solitude,
+  Seurat,
+  SingleCellExperiment,
+  irlba,
+  scry,
+  segmented,
+  sparseMatrixStats,
+  zoo,
+  R.utils
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.2
+
+
+
+
+
