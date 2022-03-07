@@ -8,6 +8,7 @@
 #' @param mito A vector of the identifiers for mitochondrial genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of mitochondrial genes [default = "auto"].
 #' @param ribo A vector of the identifiers for ribosomal genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of ribosomal genes [default = "auto"].
 #' @param coding A vector of the identifiers for protein-coding genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of protein-coding genes [default = "auto"].
+#' @param species A character identifying the species of interest [default = "human"].
 #'
 #' @details
 #' \strong{Using a contrast matrix}\cr
@@ -21,7 +22,7 @@
 #' @import Matrix
 #' @import mygene
 
-quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", mito = "auto", ribo = "auto", coding = "auto") {
+quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", mito = "auto", ribo = "auto", coding = "auto", species = "human") {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -29,39 +30,39 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   } else {
     if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
   }
-  
+
   # contrast matrix
   if(!is.null(contrast)) {
     if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
   }
-  
+
   # contrast_type argument
   if (!any(contrast_type == c("denominator", "numerator"))) { stop('contrast_type should be set to either "denomiator" or "numerator"', call. = FALSE) }
-  
+
   # mito argument
   if (mito != "auto") {
     if (sum(rownames(counts) %in% mito) != length(mito)) { stop('The count matrix does not contain all of the entered mitochondrial genes', call. = FALSE) }
   }
-  
+
   # ribo argument
   if (ribo != "auto") {
     if (sum(rownames(counts) %in% ribo) != length(ribo)) { stop('The count matrix does not contain all of the entered ribosomal genes', call. = FALSE) }
   }
-  
+
   # coding argument
   if (coding != "auto") {
     if (sum(rownames(counts) %in% coding) != length(coding)) { stop('The count matrix does not contain all of the entered protein-coding genes', call. = FALSE) }
   }
-  
+
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
   if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
-  
+
   ## create a list for holding the output
   output <- list()
-  
+
   ## extract the names of all expressed genes
   genes <- data.frame(name = rownames(counts))
-  
+
   ## find species and scope if either ribo or mito is set to auto
   if (ribo == "auto" | mito == "auto") {
     ## strip version names of gene ids (dot separated)
@@ -73,49 +74,73 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
     out <- capture.output(query <- mygene::queryMany(qterms = genes[1:100,"clean"], scopes = c("entrezgene", "ensembl.gene","symbol","name","alias","refseq","unigene","ensembl.transcript","accession","xenbase","zfin","wormbase","flybase","rgd","mgi","hgnc")))
     query <- query[ order(query$query, -query$X_score),]
     query <- query[ duplicated(query$query)==F,]
-    species <- names(which.max(table(query$taxid)))
-    
+    species_id <- names(which.max(table(query$taxid)))
+
     ## determine the scope (i.e. annotator) using the first 100 genes to query mygene
     scopes <- data.frame()
     counter <- 1
     for (scope in c("entrezgene", "ensembl.gene","symbol","name","alias","refseq","unigene","ensembl.transcript","accession","xenbase","zfin","wormbase","flybase","rgd","mgi","hgnc")) {
-      out <- capture.output(test <- mygene::queryMany(qterms = genes[1:100,"clean"], scopes = scope, species = species, return.as = "records"))
+      out <- capture.output(test <- mygene::queryMany(qterms = genes[1:100,"clean"], scopes = scope, species = species_id, return.as = "records"))
       scopes[counter,1] <- scope
       scopes[counter,2] <- sum(unlist(lapply(test,FUN="length")) > 2)
       counter <- counter + 1
     }
     scope <- scopes[ which.max(scopes[,2]),1]
   }
-  
+
   ## process mitochondrial genes
   if (mito == "auto") {
     ## lookup mitochondrial genes
-    mitoquery <- as.data.frame(mygene::query("'chrMT:1-100,000,000'", species=species, fields = scope, size = 1000)$hits)
+    mitoquery <- as.data.frame(mygene::query("'chrMT:1-100,000,000'", species=species_id, fields = scope, size = 1000)$hits)
     mitogenes <- genes[ genes$clean %in% unlist(mitoquery[,3]),1]
-  } else {
+  }  else {
     mitogenes <- mito
   }
-  
+
+  if (length(mitogenes) == 0){
+    species_data = get(data(list = species))
+    mitogenes_species = subset(species_data, Chromosome.scaffold.name %in% c("mt", "MT", "MTDNA", "mitochondrion_genome"))
+    for(i in colnames(mitogenes_species)){
+      mitogenes_search <- genes[genes$clean %in% mitogenes_species[,i],]
+      if(!(nrow(mitogenes_search) == 0)){
+        mitogenes <- mitogenes_search[,1]
+      }
+    }
+  }
+
   ## process ribosomal genes
   if (ribo == "auto") {
     ## lookup ribosomal genes
-    ribogenes <- as.data.frame(mygene::query(q = 'name:ribosomal AND name:protein AND symbol:rp* NOT name:mitochondrial', species=species, size=1000, fields = scope)$hits)
+    ribogenes <- as.data.frame(mygene::query(q = 'name:ribosomal AND name:protein AND symbol:rp* NOT name:mitochondrial', species=species_id, size=1000, fields = scope)$hits)
     ribogenes <- genes[ genes$clean %in% unlist(ribogenes[,3]),1]
   } else {
     ribogenes <- ribo
   }
-  
+
   ## process non-coding genes
   if (coding == "auto") {
     ## lookup all nonzero genes and retrieve the type of gene from Ensembl
-    nz <- names(which(rowMeans(counts) > 0))
-    out <- capture.output(pcgenes <- suppressMessages(as.data.frame(mygene::queryMany(genes[ genes$name %in% nz, "clean"], species=species, fields = c(scope, "ensembl.type_of_gene")))))
+    #nz <- names(which(rowMeans(counts) > 0)) #gives error: 'x' must be an array of at least two dimensions
+    nz <- names(Matrix::rowMeans(counts > 0))
+    out <- capture.output(pcgenes <- suppressMessages(as.data.frame(mygene::queryMany(genes[ genes$name %in% nz, "clean"], species=species_id, fields = c(scope, "ensembl.type_of_gene")))))
     pcgenes <- do.call(rbind.data.frame, pcgenes[,4])
     pcgenes <- genes[genes$clean %in% pcgenes[ pcgenes$type_of_gene == "protein_coding",1],1]
   } else {
     pcgenes <- coding
   }
-  
+
+  ## if mygene fails invoke provided data
+  if(length(pcgenes) == 0){
+    species_data = get(data(list = species))
+    pc_species = subset(species_data, Gene.type %in% c("protein_coding"))
+    for(i in colnames(pc_species)){
+      pc_search <- genes[genes$clean %in% pc_species[,i],]
+      if(!(nrow(pc_search) == 0)){
+        pcgenes <- pc_search[,1]
+      }
+    }
+  }
+
   ## calculate quality metrics
   metrics <- as.data.frame(matrix(ncol=6, nrow=ncol(counts)))
   colnames(metrics) <- c("barcode","logUMIs","logFeatures","mitochondrial_fraction","ribosomal_fraction","coding_fraction")
@@ -145,7 +170,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   output$mitochondrial <- mitogenes
   output$ribosomal <- ribogenes
   output$protein_coding <- pcgenes
-  
+
   ## return results
   return(output)
 }
