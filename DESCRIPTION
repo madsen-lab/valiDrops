@@ -17,7 +17,6 @@ Imports:
   inflection,
   matrixTests,
   mixtools,
-  mygene,
   robustbase,
   scry,
   solitude,

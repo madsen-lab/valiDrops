@@ -8,9 +8,12 @@ quality_metrics(
   counts,
   contrast = NULL,
   contrast_type = "denominator",
+  species = "auto",
+  annotation = "auto",
   mito = "auto",
   ribo = "auto",
-  coding = "auto"
+  coding = "auto",
+  verbose = TRUE
 )
 }
 \arguments{
@@ -20,11 +23,17 @@ quality_metrics(
 
 \item{contrast_type}{A string ("denominator" or "numerator") indicating the type of contrast to calculate [default = "denominator"]. See details for more information.}
 
+\item{species}{A character identifying the species of origin or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the species if possible [default = "auto"].}
+
+\item{annotation}{A character identifying the gene annotation or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the gene annotation if possible [default = "auto"].}
+
 \item{mito}{A vector of the identifiers for mitochondrial genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of mitochondrial genes [default = "auto"].}
 
 \item{ribo}{A vector of the identifiers for ribosomal genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of ribosomal genes [default = "auto"].}
 
 \item{coding}{A vector of the identifiers for protein-coding genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of protein-coding genes [default = "auto"].}
+
+\item{verbose}{A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].}
 }
 \value{
 A data frame object that contains the name of each barcode along with various quality metrics
@@ -39,4 +48,10 @@ The fraction of reads derived from exons is a useful quality metric for both sin
   \item \strong{Single-cell RNA-seq:} The main count matrix often contain only exon-derived reads. The contrast matrix should contains all reads (exons + intron) and the contrast_type should be "numerator".
   \item \strong{Single-nucleus RNA-seq:} The main count matrix often contains all reads (exons + intron). The contrast matrix should only contains exon-derived reads and the contrast_type should be "denominator".
 }
+
+\strong{Available species}\cr
+Current valiDrops supports the following species: "human", "mouse", "rat", "C.elegans", "drosophila" and "zebrafish"
+
+\strong{Available gene annotations}\cr
+Current valiDrops supports the following gene annotations: "symbol", "ensembl", "entrez", "HGNC" and "MGI"
 }
