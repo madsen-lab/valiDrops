@@ -52,20 +52,20 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   if(!is.null(contrast)) {
     if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
   }
-  
+
   # contrast_type argument
   if (!any(contrast_type == c("denominator", "numerator"))) { stop('contrast_type should be set to either "denomiator" or "numerator"', call. = FALSE) }
-  
+
   # mito argument
   if (mito != "auto") {
     if (sum(rownames(counts) %in% mito) != length(mito)) { stop('The count matrix does not contain all of the entered mitochondrial genes. Continueing', call. = TRUE) }
   }
-  
+
   # ribo argument
   if (ribo != "auto") {
     if (sum(rownames(counts) %in% ribo) != length(ribo)) { stop('The count matrix does not contain all of the entered ribosomal genes. Continueing', call. = TRUE) }
   }
-  
+
   # coding argument
   if (coding != "auto") {
     if (sum(rownames(counts) %in% coding) != length(coding)) { stop('The count matrix does not contain all of the entered protein-coding genes. Continueing', call. = TRUE) }
@@ -76,10 +76,10 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
 
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
   if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
-  
+
   ## create a list for holding the output
   output <- list()
- 
+
   ## Import datasets
   data(human, package = "valiDrops")
   data(mouse, package = "valiDrops")
@@ -119,7 +119,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   genes$clean <- genes$name
 
   ## strip dots if the input annotation is ensembl (dots to use versions of Ensembl genes is used by GENCODE)
-  ens.idx <- grep("^ENS", genes$name)
+  ens.idx <- c(grep("^ENSG00", genes$name), grep("^ENSMUSG00", genes$name))
   if (length(ens.idx) > 0) {
     ens.id <- genes[ ens.idx, "name"]
     lengths <- data.frame(dot = as.numeric(regexpr("\\.", ens.id))-1, total = nchar(as.character(ens.id)))
@@ -219,7 +219,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   output$mitochondrial <- mitogenes
   output$ribosomal <- ribogenes
   output$protein_coding <- pcgenes
-  
+
   ## return results
   return(output)
 }
