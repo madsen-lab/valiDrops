@@ -8,12 +8,9 @@
 #' @param mito A vector of the identifiers for mitochondrial genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of mitochondrial genes [default = "auto"].
 #' @param ribo A vector of the identifiers for ribosomal genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of ribosomal genes [default = "auto"].
 #' @param coding A vector of the identifiers for protein-coding genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of protein-coding genes [default = "auto"].
-<<<<<<< Updated upstream
-=======
 #' @param species A character identifying the species of origin or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the species if possible [default = "auto"].
 #' @param annotation A character identifying the gene annotation or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the gene annotation if possible [default = "auto"].
 #' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].
->>>>>>> Stashed changes
 #'
 #' @details
 #' \strong{Using a contrast matrix}\cr
@@ -32,11 +29,7 @@
 #' @export
 #' @import Matrix
 
-<<<<<<< Updated upstream
-quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", mito = "auto", ribo = "auto", coding = "auto") {
-=======
 quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto", verbose = TRUE) {
->>>>>>> Stashed changes
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -44,9 +37,6 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   } else {
     if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
   }
-<<<<<<< Updated upstream
-  
-=======
 
   # species arugment
   if (!any(species %in% c("Human","human","sapiens","Sapiens","h.sapiens", "H.Sapiens","H.sapiens","Mouse","mouse","Musculus","musculus","m.musculus","M.Musculus","M.musculus", "rat","Rat","Norvegicus","norvegicus","r.norvegicus","R.Norvegicus","R.norvegicus","worm","Worm","elegans","Elegans","C.Elegans","c.elegens","C.elegans","fly","Fly","drosophila","Drosophila","D.melanogaster","d.melanogaster","D.Melanogaster","zebrafish","Zebrafish","D.rerio","d.rerio","D.Rerio", "auto"))) {
@@ -58,7 +48,6 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
     stop('annotation must be either "auto", "symbol", "ensembl" or "entrez"', call. = FALSE)
   }
 
->>>>>>> Stashed changes
   # contrast matrix
   if(!is.null(contrast)) {
     if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
@@ -81,80 +70,16 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   if (coding != "auto") {
     if (sum(rownames(counts) %in% coding) != length(coding)) { stop('The count matrix does not contain all of the entered protein-coding genes. Continueing', call. = TRUE) }
   }
-<<<<<<< Updated upstream
-  
-=======
 
   ## Check the verbose parameter
   if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("verbose must be either TRUE or FALSE") }
 
->>>>>>> Stashed changes
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
   if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
   
   ## create a list for holding the output
   output <- list()
-<<<<<<< Updated upstream
-  
-  ## extract the names of all expressed genes
-  genes <- data.frame(name = rownames(counts))
-  
-  ## find species and scope if either ribo or mito is set to auto
-  if (ribo == "auto" | mito == "auto") {
-    ## strip version names of gene ids (dot separated)
-    lengths <- data.frame(dot = as.numeric(regexpr("\\.", genes$name))-1, total = nchar(as.character(genes$name)))
-    lengths$use <- apply(lengths, 1, FUN = function(x) min(x[x > 0]))
-    genes$clean <- substr(genes$name, 0, lengths$use)
-
-    ## determine the species using the first 100 genes to query mygene
-    out <- capture.output(query <- mygene::queryMany(qterms = genes[1:100,"clean"], scopes = c("entrezgene", "ensembl.gene","symbol","name","alias","refseq","unigene","ensembl.transcript","accession","xenbase","zfin","wormbase","flybase","rgd","mgi","hgnc")))
-    query <- query[ order(query$query, -query$X_score),]
-    query <- query[ duplicated(query$query)==F,]
-    species <- names(which.max(table(query$taxid)))
-    
-    ## determine the scope (i.e. annotator) using the first 100 genes to query mygene
-    scopes <- data.frame()
-    counter <- 1
-    for (scope in c("entrezgene", "ensembl.gene","symbol","name","alias","refseq","unigene","ensembl.transcript","accession","xenbase","zfin","wormbase","flybase","rgd","mgi","hgnc")) {
-      out <- capture.output(test <- mygene::queryMany(qterms = genes[1:100,"clean"], scopes = scope, species = species, return.as = "records"))
-      scopes[counter,1] <- scope
-      scopes[counter,2] <- sum(unlist(lapply(test,FUN="length")) > 2)
-      counter <- counter + 1
-    }
-    scope <- scopes[ which.max(scopes[,2]),1]
-  }
-  
-  ## process mitochondrial genes
-  if (mito == "auto") {
-    ## lookup mitochondrial genes
-    mitoquery <- as.data.frame(mygene::query("'chrMT:1-100,000,000'", species=species, fields = scope, size = 1000)$hits)
-    mitogenes <- genes[ genes$clean %in% unlist(mitoquery[,3]),1]
-  } else {
-    mitogenes <- mito
-  }
-  
-  ## process ribosomal genes
-  if (ribo == "auto") {
-    ## lookup ribosomal genes
-    ribogenes <- as.data.frame(mygene::query(q = 'name:ribosomal AND name:protein AND symbol:rp* NOT name:mitochondrial', species=species, size=1000, fields = scope)$hits)
-    ribogenes <- genes[ genes$clean %in% unlist(ribogenes[,3]),1]
-  } else {
-    ribogenes <- ribo
-  }
-  
-  ## process non-coding genes
-  if (coding == "auto") {
-    ## lookup all nonzero genes and retrieve the type of gene from Ensembl
-    nz <- names(which(rowMeans(counts) > 0))
-    out <- capture.output(pcgenes <- suppressMessages(as.data.frame(mygene::queryMany(genes[ genes$name %in% nz, "clean"], species=species, fields = c(scope, "ensembl.type_of_gene")))))
-    pcgenes <- do.call(rbind.data.frame, pcgenes[,4])
-    pcgenes <- genes[genes$clean %in% pcgenes[ pcgenes$type_of_gene == "protein_coding",1],1]
-  } else {
-    pcgenes <- coding
-  }
-  
-=======
-
+ 
   ## Import datasets
   data(human, package = "valiDrops")
   data(mouse, package = "valiDrops")
@@ -265,7 +190,6 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
     message(paste("Found ", length(mitogenes), " mitochondrial genes, ", length(ribogenes), " ribosomal genes, and ", length(pcgenes), " protein-coding genes.", sep=""))
   }
 
->>>>>>> Stashed changes
   ## calculate quality metrics
   metrics <- as.data.frame(matrix(ncol=6, nrow=ncol(counts)))
   colnames(metrics) <- c("barcode","logUMIs","logFeatures","mitochondrial_fraction","ribosomal_fraction","coding_fraction")
