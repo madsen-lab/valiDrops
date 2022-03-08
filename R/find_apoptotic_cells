@@ -1,0 +1,295 @@
+#' @title find_apoptotic_cells
+#'
+#' @description Function that uses two state-of-art methods (isolation Forest and autoencoder) to detect apoptotic cells in the single-cell dataset.
+#'
+#' @param counts A matrix containing counts for barcodes passing the barcode-rank threshold. See \link{rank_barcodes}
+#' @param metrics A data frame containing quality counts.metrics. See \link{quality_counts.metrics}
+#' @param plot A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].
+#' @param mito.threshold A threshold for mitochondrial fraction. See \link{quality_filter}
+#' @param seed Set a seed for reproducible results. Set to NULL to run in non-deterministic mode. Default = 42.
+#' @param verbose Set to TRUE (default) for verbose mode. Set to FALSE for silent mode.
+#'
+#' @details
+#' \strong{Using a contrast matrix}\cr
+#' The fraction of reads derived from exons is a useful quality metric for both single-cell RNA-seq and single-nucleus RNA-seq. To calculate this metric, it is necessary to provide an additional matrix (the contrast matrix) and specify the constrast type. The exact specification of these two parameters depends on the which reads are included in the main count matrix. This often depends on the type of experiment. As a guideline, for:
+#' \itemize{
+#'   \item \strong{Single-cell RNA-seq:} The main count matrix often contain only exon-derived reads. The contrast matrix should contains all reads (exons + intron) and the contrast_type should be "numerator".
+#'   \item \strong{Single-nucleus RNA-seq:} The main count matrix often contains all reads (exons + intron). The contrast matrix should only contains exon-derived reads and the contrast_type should be "denominator".
+#' }
+#' @return A data frame object that contains the quality metrics of the data and results indicating the apoptotic cells.
+#' @import Matrix
+#' @import mixtools 
+#' @import h2o
+#' @import ggplot2
+#' @import solitude
+#' @import mygene
+#' @import Seurat 
+
+find_apoptotic_cells = function(counts, metrics, mito.threshold, plot = TRUE, seed = 42, verbose = FALSE){
+  
+  ## Check the plot parameter
+  if (!isTRUE(plot) & !isFALSE(plot)) { stop("plot must be either TRUE or FALSE") }
+  
+  ## Check the verbose parameter
+  if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("plot must be either TRUE or FALSE") }
+  
+  ## Check the step parameter
+  if (mito.threshold <= 0) { stop("mito.threshold must be larger than 0") }
+  
+  ## Check class of count matrix
+  object_class = class(counts)
+  if (object_class[1] != "matrix" & object_class != "SingleCellExperiment" & object_class != "Seurat" & object_class != "dgCMatrix" & object_class != "dgTMatrix") { stop("Counts must be a matrix, a dgCMatrix, a dgTMatrix, a Seurat object or a SingleCellExperiment object") }
+  
+  # Extract counts from SingleCellExperiment objects
+  if (object_class == "SingleCellExperiment") {
+    internal_class <- class(counts@assays@data$counts)
+    if (internal_class[1] != "matrix" & internal_class != "dgCMatrix" & internal_class != "dgTMatrix") {
+      stop("The SingleCellExperiment must contain a matrix, dgCMatrix or dgTMatrix in the counts slot.")
+    } else {
+      counts <- counts@assays@data$counts
+    }
+  }
+  
+  # Extract counts from Seurats objects
+  if (object_class == "Seurat") {
+    internal_class <- class(Seurat::GetAssayData(counts, slot = "counts", assay = seurat_assay))
+    if (internal_class[1] != "matrix" & internal_class != "dgCMatrix" & internal_class != "dgTMatrix") {
+      stop("The Seurat object must contain a matrix, dgCMatrix or dgTMatrix in the counts slot.")
+    } else {
+      counts <- Seurat::GetAssayData(counts, slot = "counts", assay = seurat_assay)
+    }
+  }
+  
+  # Convert to dgCMatrix
+  if (class(counts) != "dgCMatrix") {
+    counts <- as(counts, "dgCMatrix")
+  }
+  
+  ## Check metric dataframe if it contains barcodes, the fraction of mitochondrial genes,
+  ##the fraction of ribosomal genes and coding gene fraction
+  counts.metrics = metrics$metrics
+  if(is.null(counts.metrics$barcode) && is.null(counts.metrics$mitochondrial_fraction) && is.null(counts.metrics$ribosomal_fraction) && is.null(counts.metrics$coding_fraction)) {
+    stop("Provided metrics dataframe does not contain mitochondrial fraction, ribosomal fraction, codinf fraction or barcodes.")
+  }
+  
+  # Seed
+  if (!is.null(seed)) { set.seed(seed) }
+  
+  ## Start message
+  if (verbose) { message("Data formats and parameters succesfully checked. Starting the apoptotic cell run.\n") }
+  start = Sys.time()
+  
+  #uses quality_counts.metrics to identify anomalies based on the z-score for soft labeling 
+  counts.metrics = counts.metrics[ counts.metrics$mitochondrial_fraction <= mito.threshold,]
+  counts.metrics$fraction = (1-counts.metrics$ribosomal_fraction) + (1-counts.metrics$coding_fraction) + counts.metrics$mitochondrial_fraction
+  counts.metrics$fraction_Z = (counts.metrics$fraction - mean(counts.metrics$fraction)) / sd(counts.metrics$fraction)
+  counts.metrics = counts.metrics  %>% mutate(s = if_else(fraction_Z > quantile(counts.metrics$fraction_Z, probs = .975), 1, 0))
+  rownames(counts.metrics) = counts.metrics$barcode
+  
+  ##Return a plot showing the fraction of z scores and selected threshold 
+  ##selected threshold is based on the 97.5% quantile 
+  if(plot){
+    plot(counts.metrics$fraction_Z, bg =ifelse(counts.metrics$fraction_Z > quantile(counts.metrics$fraction_Z, probs = .975),"red", "black"), col = "black",pch = 21,
+         main= "z scores with the 97.5 % quantile threshold", ylab = "fraction of the z scores") + 
+      abline(h = quantile(counts.metrics$fraction_Z, probs = .975), col = "red", lwd = 2)
+  }
+  
+  ## Extract feature sets
+  features = counts[ , colnames(counts) %in% rownames(counts.metrics)]
+  features = features[ Matrix::rowSums(features) > 0,]
+  
+  ## Normalization + Transformation
+  features.normalized = Matrix::t(Matrix::t(features) / (Matrix::colSums(features) / 10000))
+  features.normalized = log1p(features.normalized)
+  
+  ## Feature selection
+  fvf = Seurat::FindVariableFeatures(features.normalized, selection.method = "deviance")
+  fvf = fvf[ order(-fvf$mvp.dispersion.scaled),]
+  
+  ## Normalization using nullResiduals
+  features = features[rownames(features) %in% rownames(fvf[1:2000,]),] 
+  features = as.matrix(features)
+  nr = nullResiduals(features, fam = "poisson", type = "deviance")
+  
+  ## SVD (100 dims)
+  svd = irlba::irlba(t(nr), nu = 100, nv = 100)
+  unscaled.vectors = svd$u
+  
+  svd_data = cbind(as.numeric(as.character(counts.metrics$s)), unscaled.vectors)
+  svd_data = as.data.frame(svd_data)
+  colnames(svd_data) = c("s", paste("SVD_", seq(1,100,1), sep=""))
+  rownames(svd_data) = colnames(nr)
+  
+  ##########################################################################################
+  #sub-setting for Isolation Forest
+  iF_dead = subset(svd_data, s == 1)
+  iF_dead = iF_dead[,-1]
+  
+  iF_healthy = subset(svd_data, s == 0)
+  iF_healthy = iF_healthy[,-1]
+  
+  index = sample(ceiling(nrow(iF_dead) * 0.9))
+  
+  #Positive labeling
+  iforest = isolationForest$new(sample_size = length(index),
+                                num_trees = 200)
+  iforest$fit(iF_dead)
+  
+  scores_unlabeled = iF_healthy %>%
+    iforest$predict() %>%
+    arrange(desc(anomaly_score))
+  
+  #UMAP on isolation forest
+  umap_unlabeled = iF_healthy %>%
+    scale() %>%
+    uwot::umap() %>%
+    setNames(c("V1", "V2")) %>%
+    as_tibble() %>%
+    rowid_to_column() %>%
+    left_join(scores_unlabeled, by = c("rowid" = "id"))
+  
+  healthy_pred = iF_healthy %>% rowid_to_column() %>%
+    left_join(scores_unlabeled, by = c("rowid" = "id"))
+  
+  quantile_cut = quantile(scores_unlabeled$anomaly_score, probs = 0.1)
+  
+  iF_dead = subset(svd_data, s == 1)
+  iF_healthy = subset(svd_data, s == 0)
+  
+  #soft label data based on the anomaly score 
+  rownames(healthy_pred) = rownames(iF_healthy)
+  healthy_pred_labels = as.data.frame(healthy_pred$anomaly_score)
+  rownames(healthy_pred_labels) = rownames(healthy_pred)
+  colnames(healthy_pred_labels)[1] = "anomaly_score"
+  healthy_pred_labels = healthy_pred_labels %>% mutate(iForest = ifelse(anomaly_score >= quantile_cut, 0, 1))
+  healthy_pred_labels = as.data.frame(healthy_pred_labels[,2])
+  rownames(healthy_pred_labels) = rownames(healthy_pred)
+  colnames(healthy_pred_labels)[1] = "iForest"
+  dead_labels = iF_dead[, 1]
+  dead_labels = as.data.frame(dead_labels)
+  colnames(dead_labels)[1] = "iForest" 
+  rownames(dead_labels) = rownames(iF_dead)
+  iForest_labels = rbind(dead_labels, healthy_pred_labels)
+  
+  #reorder rows for merging
+  counts.metrics = counts.metrics %>% arrange(rownames(counts.metrics))
+  iForest_labels = iForest_labels %>% arrange(rownames(iForest_labels))
+  apoptotic_class = cbind(counts.metrics, iForest_labels)
+  
+  apoptotic_class$iForest = as.factor(apoptotic_class$iForest)
+  
+  #Visualization
+  if(plot){
+      a = ggplot(apoptotic_class) +
+      aes(x = ribosomal_fraction, y = mitochondrial_fraction, group = iForest, colour = iForest) + 
+      ggtitle("iForest results") +
+      geom_point(size = 2)  +
+      xlab("{frac} of ribosomal genes counts") +
+      ylab("{frac} of mitochondrial genes counts") +
+      scale_color_manual(values = c("1" = "#EF7E32",
+                                    "0" = mycol), labels = c("Apoptotic cells", "Healthy cells")) + 
+      labs(
+        colour = "Model labels") +
+      theme(
+        text = element_text(size=14),
+        panel.background = element_rect(fill = NA),
+        panel.border = element_rect(fill = NA, color = 'grey75'),
+        axis.ticks = element_blank(),
+        plot.title = element_text(size=16),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        plot.caption = element_text(hjust = 1),
+        plot.tag = element_text(size = rel(1)),
+        plot.tag.position = c(0.7, 0.07),
+        legend.position = c(0.89, 0.93)) 
+      print(a)
+  }
+  
+  ##########################################################################################
+  #we use newly predicted labels from iForest and model them with autoencoder
+  #reorder rows for merging
+  svd_data = svd_data %>% arrange(rownames(svd_data))
+  iForest_labels = cbind(as.factor(apoptotic_class$iForest),svd_data)
+  colnames(iForest_labels)[1] = "iForest"
+  
+  iForest_positive = subset(iForest_labels, iForest == "1")
+  iForest_positive = iForest_positive[,-c(1,2)]
+  iForest_negative = subset(iForest_labels, iForest == "0")
+  iForest_negative = iForest_negative[,-c(1,2)]
+  
+  # initialize h2o cluster
+  h2o.init()
+  
+  # convert train and test to h2o object
+  train_h2o = as.h2o(iForest_positive)
+  test_h2o = as.h2o(iForest_negative)
+  
+  # build auto encoder model 
+  model_AE = h2o.deeplearning(x = names(iForest_positive)
+                              , training_frame = train_h2o
+                              , model_id = "Classifier"
+                              , autoencoder = TRUE
+                              , reproducible = TRUE
+                              , ignore_const_cols = FALSE
+                              , seed = 42
+                              , hidden = c(50, 25, 50)
+                              , epochs = 100
+                              , activation = "Tanh")
+  
+  # now we need to calculate MSE or anomaly score  
+  anmlt = h2o.anomaly(model_AE, train_h2o, per_feature = FALSE) %>% as.data.frame()
+  
+  #calculate thresholds from train data
+  threshold = mean(anmlt$Reconstruction.MSE)
+  
+  anmlt = anmlt %>% mutate(s = if_else(Reconstruction.MSE < threshold, 1, 0))
+  
+  # calculate anomaly scores for test data
+  test_anmlt = h2o.anomaly(model_AE, test_h2o, per_feature = FALSE) %>% as.data.frame()
+  test_anmlt = test_anmlt %>% mutate(s = if_else(Reconstruction.MSE > threshold, 0, 1))
+  
+  # combine the train and test anomaly scores for visualization
+  results = data.frame(rbind(anmlt,test_anmlt), threshold)
+  
+  #obtaining new labels
+  AE_results3 = cbind(svd_data[,-1], results$s)
+  data_labels = as.data.frame(AE_results3[,101])
+  rownames(data_labels) = rownames(AE_results3)
+  colnames(data_labels)[1] = "Predicted"
+  
+  apoptotic_class = cbind(apoptotic_class, data_labels)
+  apoptotic_class$Predicted = as.factor(apoptotic_class$Predicted)
+  
+  #Visualization
+  if(plot){
+      b = ggplot(apoptotic_class) +
+      aes(x = ribosomal_fraction, y = mitochondrial_fraction, group = Predicted, colour = Predicted) + 
+      ggtitle("iForest results corrected with AE") +
+      geom_point(size = 2)  +
+      xlab("{frac} of ribosomal genes counts") +
+      ylab("{frac} of mitochondrial genes counts") +
+      scale_color_manual(values = c("1" = "#EF7E32",
+                                    "0" = mycol), labels = c("Apoptotic cells", "Healthy cells")) + 
+      labs(subtitle = paste(sum(apoptotic_class$Predicted == "1"), "apoptotic cells"),
+           colour = "Model labels") +
+      theme(
+        text = element_text(size=14),
+        panel.background = element_rect(fill = NA),
+        panel.border = element_rect(fill = NA, color = 'grey75'),
+        axis.ticks = element_blank(),
+        plot.title = element_text(size=16),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        plot.caption = element_text(hjust = 1),
+        plot.tag = element_text(size = rel(1)),
+        plot.tag.position = c(0.7, 0.07),
+        legend.position = c(0.89, 0.89))
+      print(b)
+  }
+
+  ##Return the dataframe with quality metrics and indicating which cells passed apoptotic cell identifier
+  apoptotic_class = apoptotic_class %>% mutate(Apoptotic_cells = if_else(Predicted == 0, "passed", "failed"))
+  apoptotic_class = apoptotic_class[,-c(9:11)]
+  return(apoptotic_class)
+  
+}
