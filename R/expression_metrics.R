@@ -132,14 +132,15 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
     features <- intersect(x = features, y = features.diff)
     
     # Run test
-	  y <- rep("excluded", ncol(norm_transform))
-	  y[which(colnames(norm_transform) %in% target)] <- "target"
-	  y[which(colnames(norm_transform) %in% rest)] <- "rest"
-	  wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
-	  wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
-	  wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
+    y <- rep("excluded", ncol(norm_transform))
+    y[which(colnames(norm_transform) %in% target)] <- "target"
+    y[which(colnames(norm_transform) %in% rest)] <- "rest"
+    wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
+    wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
+    wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
     wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
-    
+    rownames(wilcox.res) <- wilcox.res$feature
+	  
     stats[counter,1] <- cl.idx
     stats[counter,2] <- mean(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
     stats[counter,3] <- mean(pct.1[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
