@@ -16,7 +16,7 @@
 #' @importFrom Seurat FindClusters FindNeighbors
 #' @importFrom sparseMatrixStats colSds
 #' @import Matrix
-#' @import matrixTests
+#' @import presto
 
 #calculate expression metrics
 expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
@@ -101,7 +101,7 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
   res.deep <- as.numeric(substr(names(which.max(which(apply(clusters.deep,2,FUN=function(x) { min(table(x))}) == k.min))),5,100))
   if (identical(res.deep, numeric(0))) {
     mins <- apply(clusters.deep,2,FUN=function(x) { min(table(x))})
-    k.min <- min(mins[ mins > k.min])
+    k.min <- mins[ which.min(abs(mins - k.min)) ]
     res.deep <- as.numeric(substr(names(which.max(which(apply(clusters.deep,2,FUN=function(x) { min(table(x))}) == k.min))),5,100))
   }
   
@@ -132,9 +132,13 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
     features <- intersect(x = features, y = features.diff)
     
     # Run test
-    wilcox.res <- suppressWarnings(matrixTests::row_wilcoxon_twosample(as.matrix(norm_transform[features, target, drop = FALSE]),as.matrix(norm_transform[features, rest, drop = FALSE])))
-    wilcox.res <- wilcox.res[ order(wilcox.res$pvalue),]
-    wilcox.res$FDR <- p.adjust(wilcox.res$pvalue, method="bonferroni", n = nrow(nonzero))
+	  y <- rep("excluded", ncol(norm_transform))
+	  y[which(colnames(norm_transform) %in% target)] <- "target"
+	  y[which(colnames(norm_transform) %in% rest)] <- "rest"
+	  wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
+	  wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
+	  wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
+    wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
     
     stats[counter,1] <- cl.idx
     stats[counter,2] <- mean(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
