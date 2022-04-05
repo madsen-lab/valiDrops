@@ -58,7 +58,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         grp <- metrics[ which(apply(model$posterior, 1, FUN="which.max") == which.max(model$mu)),]
     
         # Find a threshold
-        sequence <- seq(median(grp$mitochondrial_fraction),1,by=0.001)
+        if (nrow(grp) > 0) {
+          sequence <- seq(median(grp$mitochondrial_fraction),1,by=0.001)
+        } else {
+          sequence <- seq(median(metrics$mitochondrial_fraction),1,by=0.001)
+        }
         cnts <- c()
         for (i in sequence) {
           cnts <- c(cnts, sum(grp$mitochondrial_fraction <= i))
