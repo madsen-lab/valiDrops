@@ -4,6 +4,7 @@
 #'
 #' @param counts A matrix containing counts for barcodes passing the barcode-rank threshold.
 #' @param rank_barcodes A boolean (TRUE or FALSE) indicating whether or not to rank barcodes [default = TRUE].
+#' @param mitochondrial_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL]. 
 #' @param label_apoptotic A boolean (TRUE or FALSE) indicating whether or not to label putative apoptotic cells [default = FALSE].
 #' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_apoptotic}
 #'
@@ -14,7 +15,7 @@
 #' @importFrom Seurat GetAssayData
 #' @importFrom SingleCellExperiment counts
 
-valiDrops = function(counts, rank_barcodes = TRUE, label_apoptotic = FALSE, ...) {
+valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = NULL, label_apoptotic = FALSE, ...) {
   ## Check the rank_barcodes parameter
   if (!isTRUE(rank_barcodes) & !isFALSE(rank_barcodes)) { stop("rank_barcodes must be either TRUE or FALSE") }
 
@@ -28,6 +29,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, label_apoptotic = FALSE, ...)
     } else {
       counts <- Seurat::GetAssayData(counts, slot = "counts")
     }
+  }
+	
+  ## Validate the mitochondrial_clusters argument
+  if(!is.null(mitochondrial_clusters) & !is.numeric(mitochondrial_clusters) & !is.integer(mitochondrial_clusters)) {
+    stop("The mitochondrial_clusters argument must be either NULL or a numeric", call. = FALSE) 	  
   }
 
   ## Validate the counts object
@@ -59,10 +65,10 @@ valiDrops = function(counts, rank_barcodes = TRUE, label_apoptotic = FALSE, ...)
 
   ## Run expression_metrics
   counts.subset.filtered <- counts.subset[ rownames(counts.subset) %in% metrics$protein_coding, colnames(counts.subset) %in% qc.pass$final]
-  expr.metrics <- R.utils::doCall(valiDrops::expression_metrics, args = ..., alwaysArgs = list(counts = counts.subset.filtered))
+  expr.metrics <- R.utils::doCall(valiDrops::expression_metrics, args = ..., alwaysArgs = list(counts = counts.subset.filtered, mito = metrics$mitochondrial))
 
   ## Run expression_filter
-  valid <- R.utils::doCall(valiDrops::expression_filter, args = ..., alwaysArgs = list(stats = expr.metrics$stats, clusters = expr.metrics$clusters))
+  valid <- R.utils::doCall(valiDrops::expression_filter, args = ..., alwaysArgs = list(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters))
 
   ## Setup the results
   met <- metrics$metrics
