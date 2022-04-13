@@ -3,6 +3,7 @@
 #' @description Function to calculate expression metrics 
 #'
 #' @param counts A matrix containing counts for barcodes passing quality filtering. See \link{quality_filter}
+#' @param mito A vector containing names of mitochondrial genes. See \link{quality_metrics}
 #' @param nfeats A number indicating the number of variable features to use for clustering [default = 5000].
 #' @param npcs A number indicating the number of singular values to use for clustering [default = 10].
 #' @param k.min A number indicating the lowest number barcodes in a cluster [default = 5].
@@ -19,7 +20,7 @@
 #' @import presto
 
 #calculate expression metrics
-expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
+expression_metrics = function(counts, mito, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -27,13 +28,19 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
   } else {
     if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
   }
-  
-  #check the quality of the matrix
-  if (nrow(counts) < ncol(counts)) { stop('You have more cells than genes. This is unexpected. Did you supply an unfiltered count matrix?', call. = TRUE) }
-  
+		  
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
   if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
   
+  # mito argument
+  if (is.null(mito)) {
+    stop("Mitochondrial genes needs to be supplied.", call. = FALSE)
+  } else {
+    if (sum(rownames(counts) %in% mito) != length(mito)) {
+      stop("The count matrix does not contain all of the entered mitochondrial genes. Continueing", call. = TRUE)
+    }
+  }
+	
   # nfeats argument
   if(class(nfeats) != "numeric" | nfeats <= 0 | nfeats < npcs) stop('nfeats needs to be a numeric greater than 0 and than npcs', call. = FALSE)
   
@@ -109,7 +116,7 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
   clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=res.deep)
 
   ## Loop across clusters and calculate stats
-  stats <- as.data.frame(matrix(ncol = 8, nrow=length(unique(clusters.deep[,1]))))
+  stats <- as.data.frame(matrix(ncol = 10, nrow=length(unique(clusters.deep[,1]))))
   counter <- 1
   
   for (cl.idx in unique(clusters.deep[,1])) {
@@ -149,12 +156,14 @@ expression_metrics = function(counts, nfeats = 5000, npcs = 10, k.min = 5, res.s
     stats[counter,6] <- nrow(wilcox.res)
     stats[counter,7] <- sum(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])] < -0.01)
     stats[counter,8] <- min(wilcox.res$FDR)
+    stats[counter,9] <- 0
+    stats[counter,10] <- sum(nonzero[mito,target]) / sum(nonzero[,target])
     counter <- counter + 1
   }
   
   # Remove barcodes with a negative percentual difference
   stats[,9] <- stats[,5] / stats[,6]
-  colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction")
+  colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction","mito_fraction")
   
   #output
   output <- list(stats = stats, clusters = clusters.deep)
