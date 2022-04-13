@@ -81,7 +81,7 @@ expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, 
     plot(-log10(stats[,8]), col = ifelse(-log10(stats[,8]) >= min.significance.level, "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Maximum significance level in cluster", las = 1)
     abline(h = min.significance.level)
     if (!is.null(mito)) {
-    plot(stats[,10], col = ifelse(stats[,10] <= median(stats[,10]) + (mito * robustbase::Sn(stats[,10])), "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Mitochondrial content", las = 1, ylim=c(0,1))
+    plot(stats[,10], col = ifelse(stats[,10] <= median(stats[,10]) + (mito * robustbase::Sn(stats[,10])), "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Mitochondrial content", las = 1)
     abline(h = median(stats[,10]) + (mito * robustbase::Sn(stats[,10])))
     }
     plot(stats[,9], col = ifelse(stats[,9] >= min.de.frac, "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Fraction of genes that are significant", las = 1, ylim=c(0,1))
