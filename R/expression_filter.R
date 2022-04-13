@@ -22,9 +22,9 @@ expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, 
   # min.significant argument
   if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
   
-  # Validate the mitochondrial_clusters argument
-  if(!is.null(mitochondrial_clusters) & !is.numeric(mitochondrial_clusters) & !is.integer(mitochondrial_clusters)) {
-    stop("The mitochondrial_clusters argument must be either NULL or a numeric", call. = FALSE) 	  
+  # Validate the mito argument
+  if(!is.null(mito) & !is.numeric(mito) & !is.integer(mito)) {
+    stop("The mito argument must be either NULL or a numeric", call. = FALSE) 	  
   }
   
   # min.target.pct argument
