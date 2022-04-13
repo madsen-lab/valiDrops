@@ -157,7 +157,7 @@ expression_metrics = function(counts, mito, nfeats = 5000, npcs = 10, k.min = 5,
     stats[counter,7] <- sum(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])] < -0.01)
     stats[counter,8] <- min(wilcox.res$FDR)
     stats[counter,9] <- 0
-    stats[counter,10] <- sum(nonzero[mito,target]) / sum(nonzero[,target])
+    stats[counter, 10] <- median((colSums(nonzero[mito,target]) / colSums(nonzero[,target])))
     counter <- counter + 1
   }
   
