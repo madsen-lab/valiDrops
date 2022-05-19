@@ -4,7 +4,8 @@
 #'
 #' @param stats A data frame containing expression metrics for clusters. See \link{expression_metrics}
 #' @param clusters A data frame mapping barcodes to clusters. See \link{expression_metrics}
-#' @param mito NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL]. 
+#' @param mito NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL].
+#' @param ribo NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL].
 #' @param min.significant A number indicating the minimum number of significant genes a cluster must have to pass filtering [default = 1].
 #' @param min.target.pct A number indicating the minimum mean fraction of barcodes in a cluster that expresses top.n marker genes [default = 0.3].
 #' @param max.background.pct A number indicating the maximum mean fraction of barcodes outside a cluster that expresses top.n marker genes [default = 0.8].
@@ -17,7 +18,7 @@
 #' @export
 
 #finding valid barcodes
-expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = TRUE) {
+expression_filter = function(stats, clusters, mito = NULL, ribo = NULL, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = TRUE) {
   ## evaluate arguments
   # min.significant argument
   if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
@@ -25,6 +26,11 @@ expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, 
   # Validate the mito argument
   if(!is.null(mito) & !is.numeric(mito) & !is.integer(mito)) {
     stop("The mito argument must be either NULL or a numeric", call. = FALSE) 	  
+  }
+  
+  # Validate the ribo argument
+  if(!is.null(ribo) & !is.numeric(ribo) & !is.integer(ribo)) {
+    stop("The ribo argument must be either NULL or a numeric", call. = FALSE) 	  
   }
   
   # min.target.pct argument
@@ -66,6 +72,9 @@ expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, 
   if (!is.null(mito)) {
     stats.filtered <- stats.filtered[ stats.filtered[,1] %in% stats[ stats[,10] <= median(stats[,10]) + (mito * robustbase::Sn(stats[,10])),1],]
   }
+  if (!is.null(ribo)) {
+    stats.filtered <- stats.filtered[ stats.filtered[,1] %in% stats[ stats[,11] <= median(stats[,11]) + (ribo * robustbase::Sn(stats[,11])),1],]
+  }
   
   # Plot
   if (plot) {
@@ -83,6 +92,10 @@ expression_filter = function(stats, clusters, mito = NULL, min.significant = 1, 
     if (!is.null(mito)) {
     plot(stats[,10], col = ifelse(stats[,10] <= median(stats[,10]) + (mito * robustbase::Sn(stats[,10])), "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Mitochondrial content", las = 1)
     abline(h = median(stats[,10]) + (mito * robustbase::Sn(stats[,10])))
+    }
+    if (!is.null(ribo)) {
+    plot(stats[,11], col = ifelse(stats[,11] <= median(stats[,11]) + (mito * robustbase::Sn(stats[,11])), "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Ribosomal content", las = 1)
+    abline(h = median(stats[,11]) + (ribo * robustbase::Sn(stats[,11])))
     }
     plot(stats[,9], col = ifelse(stats[,9] >= min.de.frac, "green","red"), pch=ifelse(stats[,1] %in% stats.filtered[,1], 16, 3), ylab="Fraction of genes that are significant", las = 1, ylim=c(0,1))
     abline(h = min.de.frac)
