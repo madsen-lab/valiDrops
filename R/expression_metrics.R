@@ -4,6 +4,7 @@
 #'
 #' @param counts A matrix containing counts for barcodes passing quality filtering. See \link{quality_filter}
 #' @param mito A vector containing names of mitochondrial genes. See \link{quality_metrics}
+#' @param ribo A vector containing names of ribosomal genes. See \link{quality_metrics}
 #' @param nfeats A number indicating the number of variable features to use for clustering [default = 5000].
 #' @param npcs A number indicating the number of singular values to use for clustering [default = 10].
 #' @param k.min A number indicating the lowest number barcodes in a cluster [default = 5].
@@ -20,7 +21,7 @@
 #' @import presto
 
 #calculate expression metrics
-expression_metrics = function(counts, mito, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
+expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -158,12 +159,13 @@ expression_metrics = function(counts, mito, nfeats = 5000, npcs = 10, k.min = 5,
     stats[counter,8] <- min(wilcox.res$FDR)
     stats[counter,9] <- 0
     stats[counter, 10] <- median((colSums(nonzero[mito,target]) / colSums(nonzero[,target])))
+    stats[counter, 11] <- median((colSums(nonzero[ribo,target]) / colSums(nonzero[,target])))
     counter <- counter + 1
   }
   
   # Remove barcodes with a negative percentual difference
   stats[,9] <- stats[,5] / stats[,6]
-  colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction","mito_fraction")
+  colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction","mito_fraction", "ribo_fraction")
   
   #output
   output <- list(stats = stats, clusters = clusters.deep)
