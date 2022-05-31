@@ -48,9 +48,6 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 20, thresh
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
   if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
   
-  ## check the quality of the matrix
-  if(nrow(counts) > ncol(counts)) message('The count matrix contains more rows than columns. This is unexpected, rank_barcodes only works with unfiltered count matrices.', appendLF = TRUE)
-  
   ## get the feature type (allowing for spelling variants)
   feature_type <- "UMI"
   if (type %in% c("Genes","gene","genes")) { feature_type <- "Genes" }
