@@ -5,7 +5,7 @@
 #' @param counts A matrix containing counts for all barcodes prior to any filtering.
 #' @param type A string ("UMI" or "Genes"), which indicates which feature to use for ranking barcodes [default = "UMI"]. See details for more information.
 #' @param psi.min A number indicating the lowest number of breakpoints to test when approximating the curve [default = 1]
-#' @param psi.max A number indicating the highest number of breakpoints to test when approximating the curve [default = 20]
+#' @param psi.max A number indicating the highest number of breakpoints to test when approximating the curve [default = 15]
 #' @param threshold A boolean (TRUE or FALSE), which indicates if the threshold to be included in the output [default = TRUE]
 #' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = TRUE]
 #'
@@ -21,7 +21,7 @@
 #' @importFrom zoo rollmean
 #' @import Matrix
 
-rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 20, threshold = TRUE, plot = TRUE) {
+rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 15, threshold = TRUE, plot = TRUE) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
