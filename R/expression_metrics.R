@@ -158,8 +158,16 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
     stats[counter,7] <- sum(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])] < -0.01)
     stats[counter,8] <- min(wilcox.res$FDR)
     stats[counter,9] <- 0
-    stats[counter, 10] <- median((colSums(nonzero[mito,target]) / colSums(nonzero[,target])))
-    stats[counter, 11] <- median((colSums(nonzero[ribo,target]) / colSums(nonzero[,target])))
+    if (length(mito[mito %in% rownames(nonzero[,target])]) > 0) {
+    	stats[counter, 10] <- median((colSums(nonzero[mito[mito %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
+    } else {
+	stats[counter, 10] <- 0
+    }
+    if (length(ribo[ribo %in% rownames(nonzero[,target])]) > 0) {
+    	stats[counter, 11] <- median((colSums(nonzero[ribo[ribo %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
+    } else {
+	stats[counter, 11] <- 0
+    }
     counter <- counter + 1
   }
   
