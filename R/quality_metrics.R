@@ -124,7 +124,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
     ens.id <- genes[ ens.idx, "name"]
     lengths <- data.frame(dot = as.numeric(regexpr("\\.", ens.id))-1, total = nchar(as.character(ens.id)))
     lengths$use <- apply(lengths, 1, FUN = function(x) min(x[x > 0]))
-    ens.clean <- substr(genes$name, 0, lengths$use)
+    ens.clean <- substr(genes[ens.idx, "name"], 0, lengths$use)
     genes[ ens.idx, "clean"] <- ens.clean
   }
 
