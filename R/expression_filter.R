@@ -15,6 +15,7 @@
 #' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = TRUE]
 #'
 #' @return A vector of valid barcodes
+#' @import segmented
 #' @export
 
 #finding valid barcodes
@@ -54,11 +55,12 @@ expression_filter = function(stats, clusters, mito = NULL, ribo = NULL, min.sign
 
   # Find threshold on significance level
   if (is.null(min.significance.level)) {
-    subset <- stats[ stats[,8] > 0,]
-    y <- subset[,2]
-    x <- -log10(subset[,8])
-    min.significance.level <- median(x[y <= 0.4]) + (robustbase::Sn(x[y <= 0.4]) * 3)
-    if (is.na(min.significance.level)) { min.significance.level <- 0 }
+    subset <- stats[stats[, 8] > 0, ]
+    y <- subset[, 2]
+    x <- -log10(subset[, 8])
+    threshold.significance.level <- median(x[y <= 0.4]) + (robustbase::Sn(x[y <= 0.4]) * 3)
+    model.significance.level <- segmented::segmented(model, npsi = 1)$psi[2]
+    min.significance.level <- min(threshold.significance.level, model.significance.level, na.rm=TRUE)
   }
   
   # Filter
