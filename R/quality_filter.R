@@ -8,14 +8,11 @@
 #' @param coding A boolean (TRUE or FALSE) indicating whether or not to filter using a threshold on the fraction of UMIs derived from protein-coding genes [default = TRUE].
 #' @param contrast A boolean (TRUE or FALSE) indicating whether or not to filter using a threshold on the contrast fraction [default = FALSE]. See \link{quality_metrics}
 #' @param mito.nreps A numeric indicating the number of times to repeat threshold identification for mitochondrial filtering [default = 10].
-#' @param dist.degree A numeric indicating the degree for the polynomial for robust regression [default = 3].
-#' @param dist.thres The maximum number of standard deviations below the mean that passes the QC. Set to ""auto" to automatically determine the threshold [default = "auto"]. See Details for more information
+#' @param npsi An integer indicating the number of breakpoints for feature to UMI fitting [default = 3].
+#' @param dist.thres The maximum number of standard deviations below the mean that passes the QC [default = 5].
 #' @param coding.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
+#' @param contrast.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
 #' @param plot A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].
-#'
-#' @details
-#' \strong{Thresholding regression residuals on distance between number of features and number of UMIs}\cr
-#' In our experience, the residuals from polynomial regression analysis of the number of features and number of UMIs almost always produces a left-tailed normal distribution. The default behaviour is to find the smallest number of standard deviations above the mean that includes all data points and use to threshold below the mean.
 #'
 #' @return A list of vectors containing the mitochondrial threshold, number of barcodes filtered at each step and the final barcodes that pass QC filtering.
 #' @export
@@ -23,20 +20,24 @@
 #' @import mixtools 
 #' @import inflection
 #' @import robustbase
-#' @import MASS
+#' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, dist.degree = 3, dist.thres = "auto", coding.threshold = 5, plot = TRUE) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE) {
   ## evaluate arguments
   # metrics matrix
   if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
   
-  # dist.degree argument
-  if(class(dist.degree) != "numeric" | dist.degree <= 0) stop('dist.degree needs to be a numeric greater than 0', call. = FALSE)
+  # npsi argument
+  if(floor(npsi) <= 0) stop('npsi needs to be a numeric greater than 0', call. = FALSE)
   
-  # dist.thres argument
-  if (dist.thres != "auto") {
-    if(!(class(dist.thres) %in% "numeric")) stop('dist.thres needs to be "auto" or a numeric', call. = FALSE)
-  }
+  # dist.threshold argument
+  if(class(dist.threshold) != "numeric" | dist.threshold <= 0) stop('dist.threshold needs to be a numeric greater than 0', call. = FALSE)
+  
+  # coding.threshold argument
+  if(class(coding.threshold) != "numeric" | coding.threshold <= 0) stop('coding.threshold needs to be a numeric greater than 0', call. = FALSE)
+
+  # contrast.threshold argument
+  if(class(contrast.threshold) != "numeric" | contrast.threshold <= 0) stop('contrast.threshold needs to be a numeric greater than 0', call. = FALSE)
   
   # mito.nreps argument
   if(class(mito.nreps) != "numeric" | mito.nreps <= 0) stop('mito.nreps needs to be a numeric greater than 0', call. = FALSE)
@@ -93,28 +94,21 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   
   if (distance) {
     if (sum(colnames(metrics) %in% c("logUMIs","logFeatures")) == 2) {  
-      # Robust polynomial regression using a variety of methods
-      reg <- robustbase::lmrob(logFeatures ~ poly(logUMIs,dist.degree), data = metrics, setting = "KS2014", method = "SMDM")
-  
-      # Fit a normal distribution to the residuals
-      fit <- MASS::fitdistr(reg$residuals[which(metrics$logUMIs >= (max(metrics$logUMIs) + min(metrics$logUMIs)) / 2)], densfun = "normal")
-  
-      # Set (or get) the number of standard deviations from the mean to use for filtering
-      if (dist.thres == "auto") {
-        dist.thres <- (max(reg$residuals[which(metrics$logUMIs >= (max(metrics$logUMIs) + min(metrics$logUMIs)) / 2)]) - fit$estimate[1]) / fit$estimate[2]
-      }
+      # Segmented model
+      model <- lm(logFeatures ~ logUMIs, data = metrics)
+      out <- segmented::segmented(model, npsi = floor(npsi))
   
       # Define upper and lower thresholds
-      upper.threshold <- fit$estimate[1] + (fit$estimate[2] * dist.thres)
-      lower.threshold <- fit$estimate[1] - (fit$estimate[2] * dist.thres)
+      upper.threshold <- median(resid(out)) + (robustbase::Sn(resid(out)) * dist.threshold)
+      lower.threshold <- median(resid(out)) - (robustbase::Sn(resid(out)) * dist.threshold)
   
       # Select barcodes to keep
-      qc.pass <- names(which(reg$residuals <= upper.threshold & reg$residuals >= lower.threshold))
+      qc.pass <- metrics[ which(resid(out) <= upper.threshold & resid(out) >= lower.threshold),1]
   
       # Plot it
       if (plot) {
         plot(y = metrics$logFeatures, x = metrics$logUMIs, pch=16, las=1, xlab="Total UMIs", ylab="Total features", col = ifelse(metrics$barcode %in% qc.pass, "grey","red"))
-        lines(x=sort(metrics$logUMIs), y=fitted(reg)[order(metrics$logUMIs)], col='blue', lwd=4) 
+        plot(out, add = TRUE, lwd = 4, col = "blue", rug = FALSE)
         mtext(paste("Kept ", length(qc.pass), " barcodes",sep=""))
       }
     
@@ -128,12 +122,9 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   
   if (coding) {
     if (any(colnames(metrics) == "coding_fraction")) {
-      # Fit a normal distribution to the fraction
-      fit <- MASS::fitdistr(metrics$coding_fraction, densfun = "normal")
-    
       # Define upper and lower thresholds
-      lower.threshold <- fit$estimate[1] - (fit$estimate[2] * coding.threshold)
-      upper.threshold <- fit$estimate[1] + (fit$estimate[2] * coding.threshold)
+      lower.threshold <- median(metrics$coding_fraction) - (robustbase::Sn(metrics$coding_fraction) * coding.threshold)
+      upper.threshold <- median(metrics$coding_fraction) + (robustbase::Sn(metrics$coding_fraction) * coding.threshold)
 
       # Select barcodes to keep
       qc.pass <- metrics[ metrics$coding_fraction >= lower.threshold & metrics$coding_fraction <= upper.threshold,"barcode"]
@@ -156,12 +147,9 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   
   if (contrast) {
     if (any(colnames(metrics) == "contrast_fraction")) {
-      # Fit a normal distribution to the fraction
-      fit <- MASS::fitdistr(metrics$contrast_fraction, densfun = "normal")
-    
       # Define upper and lower thresholds
-      lower.threshold <- fit$estimate[1] - (fit$estimate[2] * coding.threshold)
-      upper.threshold <- fit$estimate[1] + (fit$estimate[2] * coding.threshold)
+      lower.threshold <- median(metrics$contrast_fraction) - (robustbase::Sn(metrics$contrast_fraction) * contrast.threshold)
+      upper.threshold <- median(metrics$contrast_fraction) + (robustbase::Sn(metrics$contrast_fraction) * contrast.threshold)
     
       # Select barcodes to keep
       qc.pass <- metrics[ metrics$contrast_fraction >= lower.threshold & metrics$contrast_fraction <= upper.threshold,"barcode"]
@@ -175,7 +163,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
       }
     
       # Save and filter
-      output$pass.coding_filter <- qc.pass
+      output$pass.contrast_filter <- qc.pass
       metrics <- metrics[ metrics$barcode %in% qc.pass,]
     } else {
       message("Column named contrast_fraction does not exist. Skipping filtering using the contrast fraction.")
