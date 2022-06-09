@@ -21,7 +21,7 @@
 #' @importFrom zoo rollmean
 #' @import Matrix
 
-rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 15, threshold = TRUE, plot = TRUE) {
+rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 20, threshold = TRUE, plot = TRUE) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -82,7 +82,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 1, psi.max = 15, thresh
   counter <- 1
   for (psi in psi.min:psi.max) {
     model <- lm(y ~ x)
-    out <- suppressWarnings(segmented::segmented(model, npsi=psi))
+    out <- tryCatch(suppressWarnings(segmented::segmented(model, npsi = psi)), error = function(e) e)
     if (class(out)[1] == "segmented") {
       rmse[counter,1] <- psi
       rmse[counter,2] <- sqrt(mean(out$residuals^2))
