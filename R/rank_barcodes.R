@@ -89,7 +89,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
   counter <- 1
   for (psi in psi.min:psi.max) {
     model <- lm(y ~ x)
-    out <- tryCatch(suppressWarnings(segmented::segmented(model, psi = seq(quantile(x, prob = alpha),quantile(x, prob = (1-alpha)), length.out = psi), control = seg.control(alpha = (alpha-(alpha/1000)), n.boot = boot))), error = function(e) e)
+    out <- tryCatch(suppressWarnings(segmented::segmented(model, psi = seq(quantile(x, prob = alpha),quantile(x, prob = (1-alpha)), length.out = psi), control = segmented::seg.control(alpha = (alpha-(alpha/1000)), n.boot = boot))), error = function(e) e)
     if (class(out)[1] == "segmented") {
       rmse[counter,1] <- psi
       rmse[counter,2] <- sqrt(mean(out$residuals^2))
