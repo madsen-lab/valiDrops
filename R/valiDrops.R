@@ -4,8 +4,8 @@
 #'
 #' @param counts A matrix containing counts for barcodes passing the barcode-rank threshold.
 #' @param rank_barcodes A boolean (TRUE or FALSE) indicating whether or not to rank barcodes [default = TRUE].
-#' @param mitochondrial_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL]. 
-#' @param ribosomal_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = NULL]. 
+#' @param mitochondrial_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
+#' @param ribosomal_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
 #' @param label_apoptotic A boolean (TRUE or FALSE) indicating whether or not to label putative apoptotic cells [default = FALSE].
 #' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_apoptotic}
 #'
