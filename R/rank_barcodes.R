@@ -7,6 +7,7 @@
 #' @param psi.min A number indicating the lowest number of breakpoints to test when approximating the curve [default = 2]
 #' @param psi.max A number indicating the highest number of breakpoints to test when approximating the curve [default = 5]
 #' @param alpha A number indicating the region to find breakpoints within [default = 0.001]. See details for more information.
+#' @param alpha.max The maximum allowable number for indicating the region to find breakpoints within [default = 0.05]. See details for more information.
 #' @param boot A number indicating the number of bootstrap replicates used to infer breakpoints [default = 10]. Maybe necessary to increase if setting psi.max to a large number.
 #' @param factor A number indicating the number of folds above the error of the best model is allowed [default = 1.5]. See details for more information.
 #' @param threshold A boolean (TRUE or FALSE), which indicates if the threshold to be included in the output [default = TRUE]
@@ -17,7 +18,7 @@
 #' In our experience, using the number of UMIs for barcode ranking is the best approach for most single-cell RNA-seq datasets. It generally performs well when the ambient RNA contamination is low to medium. For more contaminated datasets, it may be more robust to use the number of genes for barcode ranking. Generally, we suggest to test using the number of UMIs for barcode ranking first and visually inspect the plot If the threshold is not satisfactory, you may get better result using the number of genes for barcode ranking.
 #'
 #' \strong{Setting alpha}\cr
-#' Breakpoints can only be found within the two vertical blacklines on the diagnostic plot. If the desired breakpoint is located outside of these lines, it is necessary to decrease alpha. If the desired breakpoint is far within the region, it is possible to increase alpha to improve convergence.
+#' Breakpoints can only be found within the two vertical blacklines on the diagnostic plot. If the desired breakpoint is located outside of these lines, it is necessary to decrease alpha. If the desired breakpoint is far within the region, it is possible to increase alpha to improve convergence. If the selected alpha is too low, the function will automatically increment alpha untill it reaches alpha.max.
 #' 
 #' \strong{Setting boot}\cr
 #' The function uses the root-mean-squared error to select the best segmentation model. The RMSE decreases with more breakpoints, therefore to choose a simple model that approximates the best model, the selected
@@ -27,7 +28,7 @@
 #' @importFrom zoo rollmean
 #' @import Matrix
 
-rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE) {
+rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -88,16 +89,32 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
   models <- list()
   counter <- 1
   for (psi in psi.min:psi.max) {
-    model <- lm(y ~ x)
-    out <- tryCatch(suppressWarnings(segmented::segmented(model, psi = seq(quantile(x, prob = alpha),quantile(x, prob = (1-alpha)), length.out = psi), control = segmented::seg.control(alpha = (alpha-(alpha/1000)), n.boot = boot))), error = function(e) e)
+    curr.alpha <- alpha
+	  model <- lm(y ~ x)
+    out <- tryCatch(suppressWarnings(segmented::segmented(model, psi = seq(quantile(x, prob = curr.alpha),quantile(x, prob = (1-curr.alpha)), length.out = psi), control = segmented::seg.control(alpha = (curr.alpha-(curr.alpha/1000)), n.boot = boot))), error = function(e) e)
     if (class(out)[1] == "segmented") {
       rmse[counter,1] <- psi
       rmse[counter,2] <- sqrt(mean(out$residuals^2))
       rmse[counter,3] <- counter
       models[[counter]] <- out
       counter <- counter + 1
+    } else if (grepl("psi values too close", out[[1]])) {
+		  stop = 0
+		  while (stop == 0) {
+			  curr.alpha <- curr.alpha + alpha
+			  if (curr.alpha > alpha.max) { stop = 1 }
+			    out <- tryCatch(suppressWarnings(segmented::segmented(model, psi = seq(quantile(x, prob = curr.alpha),quantile(x, prob = (1-curr.alpha)), length.out = psi), control = segmented::seg.control(alpha = (curr.alpha-(curr.alpha/1000)), n.boot = boot))), error = function(e) e)
+			    if (class(out)[1] == "segmented") {
+				    rmse[counter,1] <- psi
+				    rmse[counter,2] <- sqrt(mean(out$residuals^2))
+				    rmse[counter,3] <- counter
+				    models[[counter]] <- out
+				    counter <- counter + 1
+				    stop = 1
+			    }
+		    }
+	    }
     }
-  }
 
   ## select the best model (within a factor of the smallest RMSE)
   rmse <- rmse[!is.na(rmse[,1]),]
