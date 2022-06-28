@@ -36,10 +36,11 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   # mito argument
   if (is.null(mito)) {
     stop("Mitochondrial genes needs to be supplied.", call. = FALSE)
-  } else {
-    if (sum(rownames(counts) %in% mito) != length(mito)) {
-      stop("The count matrix does not contain all of the entered mitochondrial genes. Continueing", call. = TRUE)
-    }
+  }
+
+  # ribo argument
+  if (is.null(ribo)) {
+    stop("Ribosomal genes needs to be supplied.", call. = FALSE)
   }
 	
   # nfeats argument
@@ -57,7 +58,7 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   # top.n argument
   if(class(top.n) != "numeric" | top.n <= 0) stop('top.n needs to be a numeric greater than 0', call. = FALSE)
 
-    # Subset the count matrix
+  # Subset the count matrix
   nonzero <- counts[ Matrix::rowSums(counts) > 0,]
   
   # Calculate size factors
