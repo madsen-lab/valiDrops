@@ -84,7 +84,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   ## Run label_apoptotic
   if (label_apoptotic) {
 	rownames(metrics$metrics) <- metrics$metrics$barcode
-    apoptotic <- R.utils::doCall(valiDrops::label_apoptotic, args = ..., alwaysArgs = list(counts = counts.subset, metrics = metrics$metrics))
+    apoptotic <- R.utils::doCall(valiDrops::label_apoptotic, args = ..., alwaysArgs = list(counts = counts.subset, metrics = metrics$metrics, mitochondrial.threshold = qc.pass$mitochondrial.threshold))
 	met$apoptotic <- "healthy"
 	met[ met$barcode %in% apoptotic, "apoptotic"] <- "apoptotic"
   }
