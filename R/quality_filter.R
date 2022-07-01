@@ -8,6 +8,7 @@
 #' @param coding A boolean (TRUE or FALSE) indicating whether or not to filter using a threshold on the fraction of UMIs derived from protein-coding genes [default = TRUE].
 #' @param contrast A boolean (TRUE or FALSE) indicating whether or not to filter using a threshold on the contrast fraction [default = FALSE]. See \link{quality_metrics}
 #' @param mito.nreps A numeric indicating the number of times to repeat threshold identification for mitochondrial filtering [default = 10].
+#' @param mito.max The maximum allowable mitochondrial threshold to detect before falling back to an alternative strategy [default = 0.3].
 #' @param npsi An integer indicating the number of breakpoints for feature to UMI fitting [default = 3].
 #' @param dist.thres The maximum number of standard deviations below the mean that passes the QC [default = 5].
 #' @param coding.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
@@ -22,7 +23,7 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE) {
   ## evaluate arguments
   # metrics matrix
   if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
@@ -70,6 +71,27 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         }
         mito.thresholds <- c(mito.thresholds, inflection::uik(sequence, cnts))
       }
+      
+    # Check if mito threshold is above maximum and fall back to alternative technique using segmentation
+    if (mito.threshold > mito.max) {
+      sample.size <- min(5000, floor(nrow(metrics) * 0.8))
+      mito.thresholds <- c()
+      for (rep in 1:mito.nreps) {
+        psi <- 1
+        stop <- 0
+        metrics.subsample <- metrics[ sample(1:nrow(metrics), sample.size),]
+        model <- lm(logFeatures ~ mitochondrial_fraction, data = metrics.subsample)
+        seg <- segmented(model, npsi = psi)
+        if (min(seg$psi[,2]) > mito.max) { stop <- 1 }
+          while (stop == 1) {
+            psi <- psi + 1
+            seg <- segmented(model, npsi = psi)
+            if (psi >= 5 | min(seg$psi[,2]) <= mito.max) { stop <- 0 }
+          }		
+          mito.thresholds <- c(mito.thresholds, min(seg$psi[,2]))
+        }
+        mito.threshold <- median(mito.thresholds)
+	  }
   
       # Select threshold and filter
       mito.threshold <- median(mito.thresholds)
