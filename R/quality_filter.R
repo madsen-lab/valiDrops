@@ -71,8 +71,10 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         }
         mito.thresholds <- c(mito.thresholds, inflection::uik(sequence, cnts))
       }
-      
+     
+	    
     # Check if mito threshold is above maximum and fall back to alternative technique using segmentation
+    mito.threshold <- median(mito.thresholds)
     if (mito.threshold > mito.max) {
       sample.size <- min(5000, floor(nrow(metrics) * 0.8))
       mito.thresholds <- c()
@@ -93,8 +95,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         mito.threshold <- median(mito.thresholds)
 	  }
   
-      # Select threshold and filter
-      mito.threshold <- median(mito.thresholds)
+      # Filter
       output$mitochondrial.threshold <- mito.threshold
       qc.pass <- metrics[ metrics$mitochondrial_fraction <= mito.threshold,"barcode"]
       output$pass.mitochondrial_filter <- qc.pass
