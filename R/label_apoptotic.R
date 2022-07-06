@@ -22,7 +22,7 @@
 #' @importFrom SingleCellExperiment counts
 #' @importFrom sparseMatrixStats colSds
 #' 
-label_apoptotic = function(counts, metrics, mitochondrial.threshold, threshold = 0.2, nfeats = 5000, npcs = 20, seed = 42, verbose = FALSE){
+label_apoptotic = function(counts, metrics, mitochondrial.threshold, threshold = 0.2, nfeats = 5000, npcs = 20, seed = 42, min.cells = 5, verbose = FALSE){
   
   ## Check the verbose parameter
   if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("verbose must be either TRUE or FALSE") }
@@ -85,79 +85,84 @@ label_apoptotic = function(counts, metrics, mitochondrial.threshold, threshold =
   metrics$s <- 0
   metrics[metrics$score > threshold, "s"] <- 1
   
-  counts = counts[ , colnames(counts) %in% metrics$barcode]
-  nonzero = counts[ Matrix::rowSums(counts) > 0,]
-  
-  # Calculate size factors
-  sf <- 10000 / Matrix::colSums(nonzero)
-  
-  # Normalization and log1p transformation
-  norm_transform <- Matrix::t(Matrix::t(nonzero) * sf)
-  norm_transform@x <- log1p(norm_transform@x)
-  
-  # Variable features for the full dataset
-  dev <- scry::devianceFeatureSelection(as.matrix(nonzero))
-  var.feats <- names(which(rank(-dev) <= nfeats))
-  
-  # Feature selection
-  data <- Matrix::t(norm_transform[ rownames(norm_transform) %in% var.feats,])
-  
-  # Feature scaling
-  means <- Matrix::colMeans(data)
-  sds <- sparseMatrixStats::colSds(data)
-  sds[ sds == 0 ] <- 1
-  data.scaled <- Matrix::t((Matrix::t(data) - means)/sds)
-  
-  # SVD
-  svd <- irlba::irlba(data.scaled, nv=npcs, nu=npcs)
-  svd_data = cbind(as.numeric(as.character(metrics$s)), svd$u)
-  svd_data = as.data.frame(svd_data)
-  colnames(svd_data) = c("s", paste("SVD_", seq(1,npcs,1), sep=""))
-  rownames(svd_data) = rownames(data.scaled)
-  
-  #subsetting for Isolation Forest
-  iF_dead = subset(svd_data, s == 1)
-  iF_dead = iF_dead[,-1]
-  
-  iF_healthy = subset(svd_data, s == 0)
-  iF_healthy = iF_healthy[,-1]
-  
-  index = sample(ceiling(nrow(iF_dead) * 0.8))
-  
-  #Positive labeling
-  iforest = isolationForest$new(sample_size = length(index),
-                                num_trees = 500)
-  iforest$fit(iF_dead)
-  
-  # Calculate anomaly scores for 'healthy' labels
-  scores_unlabeled <- as.data.frame(iforest$predict(data = iF_healthy))
-  scores_unlabeled <- scores_unlabeled[ order(scores_unlabeled$anomaly_score, decreasing = TRUE),]
-  
-  #Identify the breaks on the anomaly scores
-  intervals = classIntervals(scores_unlabeled$anomaly_score, style = "quantile", thr = 0)
-  intervals = intervals$brks[3]
-  
-  #Subset the data based on the biggest jump
-  midpoint = subset(scores_unlabeled, anomaly_score < intervals)
-  
-  #break into intervals and define 
-  decision_boundary = classIntervals(midpoint$anomaly_score, style = "quantile", thr = 0)
-  decision_boundary = unique(decision_boundary$brks)
-  
-  #Identifying plateau point
-  plateau_point <- c(decision_boundary[5:length(decision_boundary)], rep(NA, 4)) - decision_boundary
-  plateua_index <- decision_boundary %in% decision_boundary[which.min(plateau_point):(which.min(plateau_point)+4)]
+  # Early stopping if requires
+  if (nrow(metrics[ metrics$s == 1,]) < min.cells) {
+    if (verbose) { message("Not enough cells labelled for training a classifier. You probably have a low number of apoptotic cells in your dataset") }
+    apoptotic <- "SurelyNotTheNameOfAnyBarcodeInAnyDataset"
+  } else {
+    counts = counts[ , colnames(counts) %in% metrics$barcode]
+    nonzero = counts[ Matrix::rowSums(counts) > 0,]
 
-  #Final cut-off
-  decision_boundary = decision_boundary[plateua_index == TRUE][1]
-  
-  # Re-label based on the anomaly scores
-  svd_data[ rownames(svd_data) %in% rownames(iF_healthy)[ scores_unlabeled$anomaly_score <= decision_boundary],"s"] <- 1
-  svd_data$barcode <- rownames(svd_data)
-  
-  #Select barcodes that were marked as apoptotic
-  apoptotic <- svd_data[ svd_data$s == 1, "barcode"]
-  
+    # Calculate size factors
+    sf <- 10000 / Matrix::colSums(nonzero)
+
+    # Normalization and log1p transformation
+    norm_transform <- Matrix::t(Matrix::t(nonzero) * sf)
+    norm_transform@x <- log1p(norm_transform@x)
+
+    # Variable features for the full dataset
+    dev <- scry::devianceFeatureSelection(as.matrix(nonzero))
+    var.feats <- names(which(rank(-dev) <= nfeats))
+
+    # Feature selection
+    data <- Matrix::t(norm_transform[ rownames(norm_transform) %in% var.feats,])
+
+    # Feature scaling
+    means <- Matrix::colMeans(data)
+    sds <- sparseMatrixStats::colSds(data)
+    sds[ sds == 0 ] <- 1
+    data.scaled <- Matrix::t((Matrix::t(data) - means)/sds)
+
+    # SVD
+    svd <- irlba::irlba(data.scaled, nv=npcs, nu=npcs)
+    svd_data = cbind(as.numeric(as.character(metrics$s)), svd$u)
+    svd_data = as.data.frame(svd_data)
+    colnames(svd_data) = c("s", paste("SVD_", seq(1,npcs,1), sep=""))
+    rownames(svd_data) = rownames(data.scaled)
+
+    #subsetting for Isolation Forest
+    iF_dead = subset(svd_data, s == 1)
+    iF_dead = iF_dead[,-1]
+
+    iF_healthy = subset(svd_data, s == 0)
+    iF_healthy = iF_healthy[,-1]
+
+    index = sample(ceiling(nrow(iF_dead) * 0.8))
+
+    #Positive labeling
+    iforest = isolationForest$new(sample_size = length(index),
+                                  num_trees = 500)
+    iforest$fit(iF_dead)
+
+    # Calculate anomaly scores for 'healthy' labels
+    scores_unlabeled <- as.data.frame(iforest$predict(data = iF_healthy))
+    scores_unlabeled <- scores_unlabeled[ order(scores_unlabeled$anomaly_score, decreasing = TRUE),]
+
+    #Identify the breaks on the anomaly scores
+    intervals = classIntervals(scores_unlabeled$anomaly_score, style = "quantile", thr = 0)
+    intervals = intervals$brks[3]
+
+    #Subset the data based on the biggest jump
+    midpoint = subset(scores_unlabeled, anomaly_score < intervals)
+
+    #break into intervals and define 
+    decision_boundary = classIntervals(midpoint$anomaly_score, style = "quantile", thr = 0)
+    decision_boundary = unique(decision_boundary$brks)
+
+    #Identifying plateau point
+    plateau_point <- c(decision_boundary[5:length(decision_boundary)], rep(NA, 4)) - decision_boundary
+    plateua_index <- decision_boundary %in% decision_boundary[which.min(plateau_point):(which.min(plateau_point)+4)]
+
+    #Final cut-off
+    decision_boundary = decision_boundary[plateua_index == TRUE][1]
+
+    # Re-label based on the anomaly scores
+    svd_data[ rownames(svd_data) %in% rownames(iF_healthy)[ scores_unlabeled$anomaly_score <= decision_boundary],"s"] <- 1
+    svd_data$barcode <- rownames(svd_data)
+
+    #Select barcodes that were marked as apoptotic
+    apoptotic <- svd_data[ svd_data$s == 1, "barcode"]
+    }
   #return apoptotic cells
   return(apoptotic)
 }
