@@ -4,7 +4,7 @@
 #'
 #' @param counts A matrix containing counts for barcodes passing the barcode-rank threshold. See \link{rank_barcodes}
 #' @param metrics A data frame containing quality metrics. See \link{quality_metrics} and \link{quality_filter}
-#' @param mitochondrial.threshold A mitochondrial threshold identified using quality_filter method. See \link{quality_filter}
+#' @param mitochondrial.threshold A mitochondrial threshold identified using quality_filter method [default = 0.5].
 #' @param threshold A number indicating the score to use for soft labeling of apoptotic cells [default = 0.2].
 #' @param nfeats A number indicating the number of variable features to use for clustering [default = 5000].
 #' @param npcs A number indicating the number of singular values to use for clustering [default = 100].
@@ -22,7 +22,7 @@
 #' @importFrom SingleCellExperiment counts
 #' @importFrom sparseMatrixStats colSds
 #' 
-label_apoptotic = function(counts, metrics, mitochondrial.threshold, threshold = 0.2, nfeats = 5000, npcs = 20, seed = 42, min.cells = 5, verbose = FALSE){
+label_apoptotic = function(counts, metrics, mitochondrial.threshold = 0.5, threshold = 0.2, nfeats = 5000, npcs = 20, seed = 42, min.cells = 5, verbose = FALSE){
   
   ## Check the verbose parameter
   if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("verbose must be either TRUE or FALSE") }
