@@ -50,8 +50,9 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   rownames(metrics) <- metrics$barcode
   
   ## Mitochondrial filtering
-  if (mito) {
+  if (isTRUE(mito) | is.numeric(mito)) {
     if (sum(colnames(metrics) %in% c("mitochondrial_fraction","logFeatures")) == 2) {  
+      if (isTRUE(mito)) {
       # Loop X times to protect against bad fits
       mito.thresholds <- c()
       for (rep in 1:mito.nreps) {
@@ -94,6 +95,9 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         }
         mito.threshold <- median(mito.thresholds)
 	  }
+      } else {
+	mito.threshold <- mito      
+      }
   
       # Filter
       output$mitochondrial.threshold <- mito.threshold
