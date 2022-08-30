@@ -57,7 +57,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
     threshold <- R.utils::doCall(valiDrops::rank_barcodes, args = ..., alwaysArgs = list(counts = counts))
 	rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
   } else {
-	rank.pass <- colnames(counts)
+	rank.pass <- colnames(counts)[which(colSums(counts) > 0)]
   }
 
   ## Subset the counts
