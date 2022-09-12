@@ -18,9 +18,7 @@
 #' @importFrom Seurat FindClusters FindNeighbors
 #' @importFrom sparseMatrixStats colSds
 #' @import Matrix
-#' @import presto
 
-#calculate expression metrics
 expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
   ## evaluate arguments
   # count matrix
@@ -117,10 +115,15 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   # Final clustering
   clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=res.deep)
 
-  ## Loop across clusters and calculate stats
+  ## Setup to catch stats across loop
   stats <- as.data.frame(matrix(ncol = 10, nrow=length(unique(clusters.deep[,1]))))
   counter <- 1
-  
+	
+  ## Check for presto
+  presto.flag <- require("presto")
+  if (!presto.flag) { warning("The 'presto' package is not availible. Consider installing 'presto' from immunogenomics/presto on GitHub for a 80 - 100x speed-up." ) }
+
+  ## Execute loop
   for (cl.idx in unique(clusters.deep[,1])) {
     # Define groups
     target <- rownames(clusters.deep)[which(clusters.deep[,1] == cl.idx)]
@@ -140,16 +143,29 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
     features.diff <- names(x = which(x = fc >= 0.25))
     features <- intersect(x = features, y = features.diff)
     
-    # Run test
+    # Setup test
     y <- rep("excluded", ncol(norm_transform))
     y[which(colnames(norm_transform) %in% target)] <- "target"
     y[which(colnames(norm_transform) %in% rest)] <- "rest"
-    wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
-    wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
-    wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
-    wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
-    rownames(wilcox.res) <- wilcox.res$feature
-	  
+
+    # Run test depending on method
+    if (presto.flag) {
+	wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
+	wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
+	wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
+	wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
+	rownames(wilcox.res) <- wilcox.res$feature
+    } else {
+	wilcox.res <- as.data.frame(matrix(ncol=2, nrow=length(features)))
+	rownames(wilcox.res) <- features
+	colnames(wilcox.res) <- c("Pvalue","FDR")
+	for (feat in features) {
+		wilcox.res[ feat,1] <- wilcox.test(norm_transform[ feat, which(y=="target")], norm_transform[ feat, which(y=="rest")])$p.value
+	}
+	wilcox.res[,2] <- p.adjust(wilcox.res[,1], method="bonferroni", n = nrow(nonzero))
+    }
+
+    # Collect stats
     stats[counter,1] <- cl.idx
     stats[counter,2] <- mean(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
     stats[counter,3] <- mean(pct.1[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
