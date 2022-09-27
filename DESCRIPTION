@@ -16,7 +16,6 @@ Imports:
   MASS,
   Matrix,
   inflection,
-  presto,
   mixtools,
   robustbase,
   scry,
@@ -29,6 +28,8 @@ Imports:
   sparseMatrixStats,
   zoo,
   R.utils
+Suggests:
+  presto
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
