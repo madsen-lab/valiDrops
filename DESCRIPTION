@@ -13,21 +13,17 @@ Depends:
 	R (>= 4.0.2)
 biocViews:	
 Imports:
-  MASS,
-  Matrix,
-  inflection,
-  mixtools,
-  robustbase,
-  scry,
-  solitude,
-  Seurat,
-  SingleCellExperiment,
-  irlba,
-  scry,
   segmented,
-  sparseMatrixStats,
   zoo,
-  R.utils
+  Matrix,
+  mixtools,
+  inflection,
+  robustbase,
+  irlba,
+  Seurat,
+  scry,
+  pROC,
+  glmnet
 Suggests:
   presto
 Encoding: UTF-8
