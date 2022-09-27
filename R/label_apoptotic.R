@@ -1,15 +1,28 @@
 #' @title label_apoptotic
 #'
-#' @description Function that uses Isolation Forest to label apoptotic cells.
+#' @description Identification of apoptotic barcode using a simple heurestic to soft-label followed by label optimization using glmnet and adaptive resampling.
 #'
 #' @param counts A matrix containing counts for barcodes passing the barcode-rank threshold. See \link{rank_barcodes}
 #' @param metrics A data frame containing quality metrics. See \link{quality_metrics} and \link{quality_filter}
-#' @param mitochondrial.threshold A mitochondrial threshold identified using quality_filter method [default = 0.5].
-#' @param threshold A number indicating the score to use for soft labeling of apoptotic cells [default = 0.2].
-#' @param nfeats A number indicating the number of variable features to use for clustering [default = 5000].
-#' @param npcs A number indicating the number of singular values to use for clustering [default = 100].
-#' @param seed Set a seed for reproducible results. Set to NULL to run in non-deterministic mode [default = 42].
-#' @param verbose Set to TRUE for verbose mode. Set to FALSE for silent mode [default = TRUE].
+#' @param qc.labels A named vector of barcodes quality filter labels ("pass" or "fail").
+#' @param cor.threshold Threshold on correlation to use for feature selection. Set to NULL to automatically identify the threshold [default = NULL].
+#' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].
+#' @param label.thrs Threshold to use for soft-labeling barcodes as either apoptotic or healthy [default = 13.5].
+#' @param label.frac Maximum fraction of barcodes to soft-label as apoptotic [default = 0.1].
+#' @param nfeats A number indicating the number of variable features to use for SVD [default = 2000].
+#' @param alpha Alpha to use in glmnet [default = 0].
+#' @param npcs A number indicating the number of singular values to calculate [default = 100].
+#' @param weight A boolean (TRUE or FALSE) indicating whether or not to be weight barcodes during training [default = TRUE].
+#' @param epochs The maximum number of epochs to train for [default = 10].
+#' @param nfolds The number of folds to use in cross-validation [default = 5].
+#' @param nrep The number of replicates to use during train time [default = 50].
+#' @param fail.weight The weight to assign to barcodes that failed quality control [default = 0.2].
+#' @param cor.min The minimum threshold to test for correlation-based feature selection [default = 0.0001].
+#' @param cor.max The maximum threshold to test for correlation-based feature selection [default = 0.005].
+#' @param cor.steps The number of steps between cor.min and cor.max to test for correlation-based feature selection [default = 50].
+#' @param nrep.cor The number of replicates to perform when determining the correlation threshold [default = 20].
+#' @param min.apoptotic The minimum number of apoptotic barcodes to use for training [default = 100].
+#' @param max.healthy The maximum number of healthy barcodes to use for training [default = 500].
 #'
 #' @return A data frame object that contains the quality metrics of the data and results indicating the apoptotic cells.
 #' @export
@@ -18,7 +31,7 @@
 #' @import glmnet
 #' @import pcaPP
 #' 
-label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, verbose = TRUE, label.thrs = 13.5, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 10, nfolds = 5, nrep = 50, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 20, min.apoptotic = 100, max.healthy = 500) {
+label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, verbose = TRUE, label.thrs = 13.5, label.frac = 0.1, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 10, nfolds = 5, nrep = 50, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 20, min.apoptotic = 100, max.healthy = 500) {
   # Soft label the dataset
   metrics$logUMIs <- scale(metrics$logUMIs, scale = FALSE)
   metrics$logFeatures <- scale(metrics$logFeatures, scale = FALSE)
@@ -35,11 +48,19 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
 
   # Break if there are not enough observations
   if (nrow(metrics[ metrics$label == "apoptotic",]) < 50) {
-    if (verbose) { message("Soft-labeling identified less than 50 apoptotic barcodes. Aborting", sep="") }
+    if (verbose) { message("Soft-labeling identified less than 50 apoptotic barcodes. Aborting") }
     metrics$label <- "healthy"
     return(metrics)
   } else {
-    if (verbose) { message("Soft-labeling identified ", nrow(metrics[ metrics$label == "apoptotic",])," apoptotic barcodes.", sep="") }
+	  if (nrow(metrics[ metrics$label == "apoptotic",]) / nrow(metrics) >= 0.5) {
+		  metrics$label <- "healthy"
+		  metrics[ metrics$score <= quantile(metrics$score, label.frac),"label"] <- "apoptotic"
+		  metrics$label <- factor(metrics$label, levels = c("healthy","apoptotic"))
+		  metrics$track = metrics$label
+		  if (verbose) { message(paste("Soft-labeling identified more than 50% of barcodes as apoptotic. It appears the metric is uncalibrated for this dataset. Failling back to labeling the bottom ", label.frac*100, "% barcodes as apoptotic.", sep="")) }
+	  } else {
+		  if (verbose) { message("Soft-labeling identified ", nrow(metrics[ metrics$label == "apoptotic",])," apoptotic barcodes.", sep="") }
+	  }
   }
 
   # Normalize and log transform counts
@@ -140,8 +161,8 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
       stats[counter,5] <- table(metrics$prediction, metrics$label)[4]
       stats[counter,6] <- table(metrics$label)[2]
       counter <- counter + 1
-
     }
+    
     # Select best threshold
     if (nrow(stats[ stats[,2] >= 0.99,]) > 0) {
       stats.subset <- stats[ stats[,2] >= 0.99,]
