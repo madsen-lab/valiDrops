@@ -21,9 +21,12 @@ Imports:
   robustbase,
   irlba,
   Seurat,
+  SingleCellExperiment,
   scry,
   pROC,
-  glmnet
+  glmnet,
+  pcaPP,
+  R.utils
 Suggests:
   presto
 Encoding: UTF-8
