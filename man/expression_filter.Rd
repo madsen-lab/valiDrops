@@ -7,6 +7,8 @@
 expression_filter(
   stats,
   clusters,
+  mito = 3,
+  ribo = 3,
   min.significant = 1,
   min.target.pct = 0.3,
   max.background.pct = 0.7,
@@ -20,6 +22,10 @@ expression_filter(
 \item{stats}{A data frame containing expression metrics for clusters. See \link{expression_metrics}}
 
 \item{clusters}{A data frame mapping barcodes to clusters. See \link{expression_metrics}}
+
+\item{mito}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
+
+\item{ribo}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
 
 \item{min.significant}{A number indicating the minimum number of significant genes a cluster must have to pass filtering [default = 1].}
 

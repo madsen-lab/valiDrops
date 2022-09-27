@@ -11,9 +11,11 @@ quality_filter(
   coding = TRUE,
   contrast = FALSE,
   mito.nreps = 10,
-  dist.degree = 3,
-  dist.thres = "auto",
-  coding.threshold = 5,
+  mito.max = 0.3,
+  npsi = 3,
+  dist.threshold = 5,
+  coding.threshold = 3,
+  contrast.threshold = 3,
   plot = TRUE
 )
 }
@@ -30,21 +32,21 @@ quality_filter(
 
 \item{mito.nreps}{A numeric indicating the number of times to repeat threshold identification for mitochondrial filtering [default = 10].}
 
-\item{dist.degree}{A numeric indicating the degree for the polynomial for robust regression [default = 3].}
+\item{mito.max}{The maximum allowable mitochondrial threshold to detect before falling back to an alternative strategy [default = 0.3].}
 
-\item{dist.thres}{The maximum number of standard deviations below the mean that passes the QC. Set to ""auto" to automatically determine the threshold [default = "auto"]. See Details for more information}
+\item{npsi}{An integer indicating the number of breakpoints for feature to UMI fitting [default = 3].}
 
 \item{coding.threshold}{The maximum number of standard deviations around the mean that passes the QC [default = 5].}
 
+\item{contrast.threshold}{The maximum number of standard deviations around the mean that passes the QC [default = 5].}
+
 \item{plot}{A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].}
+
+\item{dist.thres}{The maximum number of standard deviations below the mean that passes the QC [default = 5].}
 }
 \value{
 A list of vectors containing the mitochondrial threshold, number of barcodes filtered at each step and the final barcodes that pass QC filtering.
 }
 \description{
 Function to filter barcodes based on quality metrics
-}
-\details{
-\strong{Thresholding regression residuals on distance between number of features and number of UMIs}\cr
-In our experience, the residuals from polynomial regression analysis of the number of features and number of UMIs almost always produces a left-tailed normal distribution. The default behaviour is to find the smallest number of standard deviations above the mean that includes all data points and use to threshold below the mean.
 }

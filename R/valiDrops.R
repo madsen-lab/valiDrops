@@ -13,8 +13,8 @@
 #' @export
 #' @import R.utils
 #' @import Matrix
-#' @importFrom Seurat GetAssayData
-#' @importFrom SingleCellExperiment counts
+#' @import Seurat
+#' @import SingleCellExperiment
 
 valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_apoptotic = FALSE, ...) {
   ## Check the rank_barcodes parameter
@@ -26,7 +26,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   ## Extract counts from Seurat or SCE objects
   if (any(class(counts) %in% c("SingleCellExperiment", "Seurat"))) {
     if (class(counts) == "SingleCellExperiment") {
-      counts <- counts(counts)
+      counts <- SingleCellExperiment::counts(counts)
     } else {
       counts <- Seurat::GetAssayData(counts, slot = "counts")
     }

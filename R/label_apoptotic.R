@@ -14,15 +14,11 @@
 #' @return A data frame object that contains the quality metrics of the data and results indicating the apoptotic cells.
 #' @export
 #' @import Matrix
-#' @import mixtools 
-#' @import solitude
-#' @import scry
-#' @import classInt
-#' @importFrom Seurat GetAssayData
-#' @importFrom SingleCellExperiment counts
-#' @importFrom sparseMatrixStats colSds
+#' @import pROC
+#' @import glmnet
+#' @import pcaPP
 #' 
-label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, verbose = TRUE, label.thrs = 13.5, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 10, nfolds = 5, nrep = 50, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 20) {
+label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, verbose = TRUE, label.thrs = 13.5, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 10, nfolds = 5, nrep = 50, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 20, min.apoptotic = 100, max.healthy = 500) {
   # Soft label the dataset
   metrics$logUMIs <- scale(metrics$logUMIs, scale = FALSE)
   metrics$logFeatures <- scale(metrics$logFeatures, scale = FALSE)
@@ -34,6 +30,7 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
   metrics[ metrics$score <= label.thrs,"label"] <- "apoptotic"
   metrics$label <- factor(metrics$label, levels = c("healthy","apoptotic"))
 
+  # Define tracking column
   metrics$track = metrics$label
 
   # Break if there are not enough observations
@@ -58,7 +55,8 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
 
   # Scaling and SVD
   means <- Matrix::colMeans(nonzero)
-  sds <- sparseMatrixStats::colSds(nonzero)
+  nr <- nrow(nonzero)
+  sds <- sqrt((Matrix::colMeans(nonzero*nonzero) - Matrix::colMeans(nonzero)^2) * (nr / (nr-1)))
   sds[ sds == 0 ] <- 1
   data.scaled <- Matrix::t((Matrix::t(nonzero) - means)/sds)
 
@@ -106,10 +104,10 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
       prob.mat <- as.data.frame(matrix(ncol = nrep.cor, nrow = nrow(metrics)))
       for (rep in 1:nrep.cor) {
         # Extract and combine the samples
-        idx.apoptotic.fail <- as.numeric(sample(x=as.character(which(metrics$qc == "fail" & metrics$label == "apoptotic")), size=max(100, length(which(metrics$qc == "fail" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "fail" & metrics$label == "apoptotic"), "prob"]))
-        idx.apoptotic.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "apoptotic"), size=max(100, length(which(metrics$qc == "pass" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "pass" & metrics$label == "apoptotic"), "prob"])
-        idx.healthy.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "healthy"), size=min(500, length(which(metrics$qc == "fail" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "fail" & metrics$label == "healthy"), "prob"]-1))
-        idx.healthy.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "healthy"), size=min(500, length(which(metrics$qc == "pass" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "pass" & metrics$label == "healthy"), "prob"]-1))
+        idx.apoptotic.fail <- as.numeric(sample(x=as.character(which(metrics$qc == "fail" & metrics$label == "apoptotic")), size=max(min.apoptotic, length(which(metrics$qc == "fail" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "fail" & metrics$label == "apoptotic"), "prob"]))
+        idx.apoptotic.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "apoptotic"), size=max(min.apoptotic, length(which(metrics$qc == "pass" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "pass" & metrics$label == "apoptotic"), "prob"])
+        idx.healthy.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "healthy"), size=min(max.healthy, length(which(metrics$qc == "fail" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "fail" & metrics$label == "healthy"), "prob"]-1))
+        idx.healthy.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "healthy"), size=min(max.healthy, length(which(metrics$qc == "pass" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "pass" & metrics$label == "healthy"), "prob"]-1))
         new.X.fail <- X[c(idx.apoptotic.fail, idx.healthy.fail),]
         new.X.pass <- X[c(idx.apoptotic.pass, idx.healthy.pass),]
         new.X <- rbind(new.X.fail, new.X.pass)
@@ -125,13 +123,13 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
         random.order <- sample(1:length(new.Y))
 
         # Train the model
-        net <- cv.glmnet(x = new.X[random.order ,], y = new.Y[random.order], family = "binomial", alpha = alpha, nfolds = nfolds, weights = weights[random.order])
+        net <- glmnet::cv.glmnet(x = new.X[random.order ,], y = new.Y[random.order], family = "binomial", alpha = alpha, nfolds = nfolds, weights = weights[random.order])
         probs <- predict(net, newx = X, type = "response", s = "lambda.1se")
         prob.mat[,rep] <- probs[,1]
       }
       metrics$prob <- apply(prob.mat, 1, FUN="median")
-      ROC <-  suppressMessages(roc(response = factor(metrics[ metrics$qc == "pass", "label"], levels = c("healthy","apoptotic")), predictor = as.numeric(metrics[ metrics$qc == "pass", "prob"])))
-      cords <- coords(ROC,"best")
+      ROC <-  suppressMessages(pROC::roc(response = factor(metrics[ metrics$qc == "pass", "label"], levels = c("healthy","apoptotic")), predictor = as.numeric(metrics[ metrics$qc == "pass", "prob"])))
+      cords <- pROC::coords(ROC,"best")
       metrics$prediction <- "healthy"
       metrics[ metrics$prob > cords$threshold,"prediction"] <- "apoptotic"
       metrics$prediction <- factor(metrics$prediction, levels = c("apoptotic","healthy"))
@@ -203,7 +201,7 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
       X = X[,which(cor.coef^2 >= cor.threshold)]
       limited_epochs = limited_epochs + 1
     } else {
-      print("Reached limit")
+      if (verbose) { message("Epoch limit reached.") }
       break
     }
 
@@ -212,10 +210,10 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
     for (rep in 1:nrep) {
 
       # Extract and combine the samples
-      idx.apoptotic.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "apoptotic"), size=max(100, length(which(metrics$qc == "fail" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "fail" & metrics$label == "apoptotic"), "prob"])
-      idx.apoptotic.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "apoptotic"), size=max(100, length(which(metrics$qc == "pass" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "pass" & metrics$label == "apoptotic"), "prob"])
-      idx.healthy.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "healthy"), size=min(500, length(which(metrics$qc == "fail" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "fail" & metrics$label == "healthy"), "prob"]-1))
-      idx.healthy.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "healthy"), size=min(500, length(which(metrics$qc == "pass" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "pass" & metrics$label == "healthy"), "prob"]-1))
+      idx.apoptotic.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "apoptotic"), size=max(min.apoptotic, length(which(metrics$qc == "fail" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "fail" & metrics$label == "apoptotic"), "prob"])
+      idx.apoptotic.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "apoptotic"), size=max(min.apoptotic, length(which(metrics$qc == "pass" & metrics$label == "apoptotic"))), replace=TRUE, prob=metrics[ which(metrics$qc == "pass" & metrics$label == "apoptotic"), "prob"])
+      idx.healthy.fail <- sample(x=which(metrics$qc == "fail" & metrics$label == "healthy"), size=min(max.healthy, length(which(metrics$qc == "fail" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "fail" & metrics$label == "healthy"), "prob"]-1))
+      idx.healthy.pass <- sample(x=which(metrics$qc == "pass" & metrics$label == "healthy"), size=min(max.healthy, length(which(metrics$qc == "pass" & metrics$label == "healthy"))), replace=TRUE, prob=abs(metrics[ which(metrics$qc == "pass" & metrics$label == "healthy"), "prob"]-1))
       new.X.fail <- X[c(idx.apoptotic.fail, idx.healthy.fail),]
       new.X.pass <- X[c(idx.apoptotic.pass, idx.healthy.pass),]
       new.X <- rbind(new.X.fail, new.X.pass)
@@ -231,13 +229,13 @@ label_apoptotic <- function(counts, metrics, qc.labels, cor.threshold = NULL, ve
       random.order <- sample(1:length(new.Y))
 
       # Train the model
-      net <- cv.glmnet(x = new.X[random.order ,], y = new.Y[random.order], family = "binomial", alpha = alpha, nfolds = nfolds, weights = weights[random.order])
+      net <- glmnet::cv.glmnet(x = new.X[random.order ,], y = new.Y[random.order], family = "binomial", alpha = alpha, nfolds = nfolds, weights = weights[random.order])
       probs <- predict(net, newx = X, type = "response", s = "lambda.1se")
       prob.mat[,rep] <- probs[,1]
     }
     metrics$prob <- apply(prob.mat, 1, FUN="median")
-    ROC <-  suppressMessages(roc(response = factor(metrics[ metrics$qc == "pass", "label"], levels = c("healthy","apoptotic")), predictor = as.numeric(metrics[ metrics$qc == "pass", "prob"])))
-    cords <- coords(ROC,"best")
+    ROC <-  suppressMessages(pROC::roc(response = factor(metrics[ metrics$qc == "pass", "label"], levels = c("healthy","apoptotic")), predictor = as.numeric(metrics[ metrics$qc == "pass", "prob"])))
+    cords <- pROC::coords(ROC,"best")
     metrics$prediction <- "healthy"
     metrics[ metrics$prob > cords$threshold,"prediction"] <- "apoptotic"
     metrics$prediction <- factor(metrics$prediction, levels = c("apoptotic","healthy"))

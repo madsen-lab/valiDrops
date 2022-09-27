@@ -7,13 +7,24 @@
 label_apoptotic(
   counts,
   metrics,
-  zscore = 3,
-  nfeats = 5000,
-  npcs = 20,
-  anomaly.quantile = 0.15,
-  plot = TRUE,
-  seed = 42,
-  verbose = FALSE
+  qc.labels,
+  cor.threshold = NULL,
+  verbose = TRUE,
+  label.thrs = 13.5,
+  nfeats = 2000,
+  alpha = 0,
+  npcs = 100,
+  weight = TRUE,
+  epochs = 10,
+  nfolds = 5,
+  nrep = 50,
+  fail.weight = 0.2,
+  cor.min = 1e-04,
+  cor.max = 0.005,
+  cor.steps = 50,
+  nrep.cor = 20,
+  min.apoptotic = 100,
+  max.healthy = 500
 )
 }
 \arguments{
@@ -21,19 +32,17 @@ label_apoptotic(
 
 \item{metrics}{A data frame containing quality metrics. See \link{quality_metrics} and \link{quality_filter}}
 
-\item{zscore}{A number indicating the Z score to use for soft labeling of apoptotic cells [default = 3].}
+\item{verbose}{Set to TRUE for verbose mode. Set to FALSE for silent mode [default = TRUE].}
 
 \item{nfeats}{A number indicating the number of variable features to use for clustering [default = 5000].}
 
 \item{npcs}{A number indicating the number of singular values to use for clustering [default = 100].}
 
-\item{anomaly.quantile}{A number indicating the quantile to use for detecting anomalous barcodes [default = 0.1].}
+\item{mitochondrial.threshold}{A mitochondrial threshold identified using quality_filter method [default = 0.5].}
 
-\item{plot}{A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].}
+\item{threshold}{A number indicating the score to use for soft labeling of apoptotic cells [default = 0.2].}
 
 \item{seed}{Set a seed for reproducible results. Set to NULL to run in non-deterministic mode [default = 42].}
-
-\item{verbose}{Set to TRUE for verbose mode. Set to FALSE for silent mode [default = TRUE].}
 }
 \value{
 A data frame object that contains the quality metrics of the data and results indicating the apoptotic cells.

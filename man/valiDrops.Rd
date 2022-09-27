@@ -4,12 +4,23 @@
 \alias{valiDrops}
 \title{valiDrops}
 \usage{
-valiDrops(counts, rank_barcodes = TRUE, label_apoptotic = FALSE, ...)
+valiDrops(
+  counts,
+  rank_barcodes = TRUE,
+  mitochondrial_clusters = 3,
+  ribosomal_clusters = 3,
+  label_apoptotic = FALSE,
+  ...
+)
 }
 \arguments{
 \item{counts}{A matrix containing counts for barcodes passing the barcode-rank threshold.}
 
 \item{rank_barcodes}{A boolean (TRUE or FALSE) indicating whether or not to rank barcodes [default = TRUE].}
+
+\item{mitochondrial_clusters}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
+
+\item{ribosomal_clusters}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
 
 \item{label_apoptotic}{A boolean (TRUE or FALSE) indicating whether or not to label putative apoptotic cells [default = FALSE].}
 

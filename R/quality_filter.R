@@ -84,11 +84,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         stop <- 0
         metrics.subsample <- metrics[ sample(1:nrow(metrics), sample.size),]
         model <- lm(logFeatures ~ mitochondrial_fraction, data = metrics.subsample)
-        seg <- segmented(model, npsi = psi)
+        seg <- segmented::segmented(model, npsi = psi)
         if (min(seg$psi[,2]) > mito.max) { stop <- 1 }
           while (stop == 1) {
             psi <- psi + 1
-            seg <- segmented(model, npsi = psi)
+            seg <- segmented::segmented(model, npsi = psi)
             if (psi >= 5 | min(seg$psi[,2]) <= mito.max) { stop <- 0 }
           }		
           mito.thresholds <- c(mito.thresholds, min(seg$psi[,2]))

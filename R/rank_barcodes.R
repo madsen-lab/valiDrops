@@ -24,8 +24,8 @@
 #' The function uses the root-mean-squared error to select the best segmentation model. The RMSE decreases with more breakpoints, therefore to choose a simple model that approximates the best model, the selected
 #' @return A list or a data frame object that contains ranked barcodes and if chosen a threshold.
 #' @export
-#' @importFrom segmented segmented slope
-#' @importFrom zoo rollmean
+#' @import segmented
+#' @import zoo
 #' @import Matrix
 
 rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE) {

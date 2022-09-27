@@ -13,10 +13,9 @@
 #'
 #' @return A data frame containing expression metrics
 #' @export
-#' @importFrom irlba irlba
-#' @importFrom scry devianceFeatureSelection
-#' @importFrom Seurat FindClusters FindNeighbors
-#' @importFrom sparseMatrixStats colSds
+#' @import irlba
+#' @import scry
+#' @import Seurat
 #' @import Matrix
 
 expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.min = 5, res.shallow = 0.1, top.n = 10) {
@@ -76,7 +75,8 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   
   # Feature scaling
   means <- Matrix::colMeans(data)
-  sds <- sparseMatrixStats::colSds(data)
+  nr <- nrow(data)
+  sds <- sqrt((Matrix::colMeans(data*data) - Matrix::colMeans(data)^2) * (nr / (nr-1)))
   sds[ sds == 0 ] <- 1
   data.scaled <- Matrix::t((Matrix::t(data) - means)/sds)
   

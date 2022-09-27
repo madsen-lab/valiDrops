@@ -6,6 +6,8 @@
 \usage{
 expression_metrics(
   counts,
+  mito,
+  ribo,
   nfeats = 5000,
   npcs = 10,
   k.min = 5,
@@ -15,6 +17,10 @@ expression_metrics(
 }
 \arguments{
 \item{counts}{A matrix containing counts for barcodes passing quality filtering. See \link{quality_filter}}
+
+\item{mito}{A vector containing names of mitochondrial genes. See \link{quality_metrics}}
+
+\item{ribo}{A vector containing names of ribosomal genes. See \link{quality_metrics}}
 
 \item{nfeats}{A number indicating the number of variable features to use for clustering [default = 5000].}
 

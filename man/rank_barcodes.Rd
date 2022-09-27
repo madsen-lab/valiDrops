@@ -7,8 +7,12 @@
 rank_barcodes(
   counts,
   type = "UMI",
-  psi.min = 1,
-  psi.max = 20,
+  psi.min = 2,
+  psi.max = 5,
+  alpha = 0.001,
+  alpha.max = 0.05,
+  boot = 10,
+  factor = 1.5,
   threshold = TRUE,
   plot = TRUE
 )
@@ -18,9 +22,17 @@ rank_barcodes(
 
 \item{type}{A string ("UMI" or "Genes"), which indicates which feature to use for ranking barcodes [default = "UMI"]. See details for more information.}
 
-\item{psi.min}{A number indicating the lowest number of breakpoints to test when approximating the curve [default = 1]}
+\item{psi.min}{A number indicating the lowest number of breakpoints to test when approximating the curve [default = 2]}
 
-\item{psi.max}{A number indicating the highest number of breakpoints to test when approximating the curve [default = 20]}
+\item{psi.max}{A number indicating the highest number of breakpoints to test when approximating the curve [default = 5]}
+
+\item{alpha}{A number indicating the region to find breakpoints within [default = 0.001]. See details for more information.}
+
+\item{alpha.max}{The maximum allowable number for indicating the region to find breakpoints within [default = 0.05]. See details for more information.}
+
+\item{boot}{A number indicating the number of bootstrap replicates used to infer breakpoints [default = 10]. Maybe necessary to increase if setting psi.max to a large number.}
+
+\item{factor}{A number indicating the number of folds above the error of the best model is allowed [default = 1.5]. See details for more information.}
 
 \item{threshold}{A boolean (TRUE or FALSE), which indicates if the threshold to be included in the output [default = TRUE]}
 
@@ -36,6 +48,9 @@ Function to rank barcodes according to the number of UMIs (or genes) and detect 
 \strong{Choosing the type of feature to use for ranking of barcodes}\cr
 In our experience, using the number of UMIs for barcode ranking is the best approach for most single-cell RNA-seq datasets. It generally performs well when the ambient RNA contamination is low to medium. For more contaminated datasets, it may be more robust to use the number of genes for barcode ranking. Generally, we suggest to test using the number of UMIs for barcode ranking first and visually inspect the plot If the threshold is not satisfactory, you may get better result using the number of genes for barcode ranking.
 
-\strong{Parallel processing}\cr
-This function is uses parallel processing through the foreach and doRNG packages. To use this functionality, the backend needs to be registered beforehand. This can be done by the user (using e.g. doFuture) or by the valiDrops wrapper. For more details, see \link{rank_barcodes}
+\strong{Setting alpha}\cr
+Breakpoints can only be found within the two vertical blacklines on the diagnostic plot. If the desired breakpoint is located outside of these lines, it is necessary to decrease alpha. If the desired breakpoint is far within the region, it is possible to increase alpha to improve convergence. If the selected alpha is too low, the function will automatically increment alpha untill it reaches alpha.max.
+
+\strong{Setting boot}\cr
+The function uses the root-mean-squared error to select the best segmentation model. The RMSE decreases with more breakpoints, therefore to choose a simple model that approximates the best model, the selected
 }
