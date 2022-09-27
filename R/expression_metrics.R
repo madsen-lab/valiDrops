@@ -120,8 +120,8 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   counter <- 1
 	
   ## Check for presto
-  presto.flag <- require("presto")
-  if (!presto.flag) { warning("The 'presto' package is not availible. Consider installing 'presto' from immunogenomics/presto on GitHub for a 80 - 100x speed-up." ) }
+  presto.flag <- require("presto", quietly = TRUE)
+  if (!presto.flag) { message("The 'presto' package is not availible. Consider installing 'presto' from immunogenomics/presto on GitHub for a 80 - 100x speed-up." ) }
 
   ## Execute loop
   for (cl.idx in unique(clusters.deep[,1])) {
