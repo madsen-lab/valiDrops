@@ -50,3 +50,35 @@ data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))
 ## Create a Seurat object
 seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
 ```
+
+# Detecting apoptotic cells
+
+valiDrops can detect apoptotic cells by providing a flag to the valiDrops() function or by running the label_apoptotic() function seperately. Here, we demonstrate how to label apoptotic cells are part of the valiDrops workflow assuming you have already loaded libraries and imported your datasets.
+
+```{r}
+## Run valiDrops
+valid <- valiDrops(data, label_apoptotic = TRUE)
+
+## Remove apoptotic cells and create a Seurat object
+# Setup data
+valid.subset <- valid[ valid$qc.pass == "pass" & valid$apoptotic == FALSE,]
+rownames(valid.subset) <- valid.subset[,1]
+valid.subset <- valid.subset[, grep("fraction", colnames(valid.subset))]
+data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
+data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
+
+# Create a Seurat object
+seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
+
+## Keep apoptotic cells, and create a Seurat object indicating which barcodes are likely to be apoptotic cells
+# Setup data
+valid.subset <- valid[ valid$qc.pass == "pass",]
+rownames(valid.subset) <- valid.subset[,1]
+valid.subset <- valid.subset[, grep("fraction", colnames(valid.subset))]
+data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
+data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
+
+# Create a Seurat object
+seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
+```
+
