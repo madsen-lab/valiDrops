@@ -11,6 +11,7 @@ License: GPL-3
 URL: https://github.com/madsen-lab/valiDrops
 Depends: 
 	R (>= 4.0.2)
+biocViews:	
 Imports:
   MASS,
   Matrix,
