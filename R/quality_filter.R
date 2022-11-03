@@ -123,7 +123,14 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
     if (sum(colnames(metrics) %in% c("logUMIs","logFeatures")) == 2) {  
       # Segmented model
       model <- lm(logFeatures ~ logUMIs, data = metrics)
-      out <- segmented::segmented(model, npsi = floor(npsi))
+      while (floor(npsi) >= 1) {
+	out <- segmented::segmented(model, npsi = floor(npsi))
+	if (class(out)[1] == "segmented") {
+	  break
+	} else {
+	  npsi <- floor(npsi) - 1
+	}
+      }
   
       # Define upper and lower thresholds
       upper.threshold <- median(resid(out)) + (robustbase::Sn(resid(out)) * dist.threshold)
@@ -135,7 +142,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
       # Plot it
       if (plot) {
         plot(y = metrics$logFeatures, x = metrics$logUMIs, pch=16, las=1, xlab="Total UMIs", ylab="Total features", col = ifelse(metrics$barcode %in% qc.pass, "grey","red"))
-        plot(out, add = TRUE, lwd = 4, col = "blue", rug = FALSE)
+        if (class(out)[1] == "segmented") {
+	      plot(out, add = TRUE, lwd = 4, col = "blue", rug = FALSE)
+	} else {
+		abline(out, lwd=4, col="blue")
+	}
         mtext(paste("Kept ", length(qc.pass), " barcodes",sep=""))
       }
     
