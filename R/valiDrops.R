@@ -9,7 +9,7 @@
 #' @param label_dead A boolean (TRUE or FALSE) indicating whether or not to label putative dead cells [default = FALSE].
 #' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}
 #'
-#' @return A data frame containing quality metrics, as well as quality control labels (and if requested, apoptotic labels) for all barcodes passing the rank threshold.
+#' @return A data frame containing quality metrics, as well as quality control labels (and if requested, dead labels) for all barcodes passing the rank threshold.
 #' @export
 #' @import R.utils
 #' @import Matrix
@@ -20,8 +20,8 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   ## Check the rank_barcodes parameter
   if (!isTRUE(rank_barcodes) & !isFALSE(rank_barcodes)) { stop("rank_barcodes must be either TRUE or FALSE") }
 
-  ## Check the label_apoptotic parameter
-  if (!isTRUE(label_apoptotic) & !isFALSE(label_apoptotic)) { stop("label_apoptotic must be either TRUE or FALSE") }
+  ## Check the label_dead parameter
+  if (!isTRUE(label_dead) & !isFALSE(label_dead)) { stop("label_dead must be either TRUE or FALSE") }
 
   ## Extract counts from Seurat or SCE objects
   if (any(class(counts) %in% c("SingleCellExperiment", "Seurat"))) {
