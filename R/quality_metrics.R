@@ -80,22 +80,14 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   ## create a list for holding the output
   output <- list()
 
-  ## Import datasets
-  data(human, package = "valiDrops")
-  data(mouse, package = "valiDrops")
-  data(rat, package = "valiDrops")
-  data(zebrafish, package = "valiDrops")
-  data(worm, package = "valiDrops")
-  data(fly, package = "valiDrops")
-
   ## Create a list
   ds <- list()
-  ds[[1]] <- as.data.frame(human)
-  ds[[2]] <- as.data.frame(mouse)
-  ds[[3]] <- as.data.frame(rat)
-  ds[[4]] <- as.data.frame(zebrafish)
-  ds[[5]] <- as.data.frame(worm)
-  ds[[6]] <- as.data.frame(fly)
+  ds[[1]] <- as.data.frame(annotation[[1]])
+  ds[[2]] <- as.data.frame(annotation[[2]])
+  ds[[3]] <- as.data.frame(annotation[[3]])
+  ds[[4]] <- as.data.frame(annotation[[6]])
+  ds[[5]] <- as.data.frame(annotation[[5]])
+  ds[[6]] <- as.data.frame(annotation[[4]])
 
   ## Determine dataset
   if (species == "auto") {
