@@ -16,7 +16,7 @@
 #' @import Seurat
 #' @import SingleCellExperiment
 
-valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_apoptotic = FALSE, ...) {
+valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_dead = FALSE, ...) {
   ## Check the rank_barcodes parameter
   if (!isTRUE(rank_barcodes) & !isFALSE(rank_barcodes)) { stop("rank_barcodes must be either TRUE or FALSE") }
 
