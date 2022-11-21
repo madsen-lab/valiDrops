@@ -6,8 +6,8 @@
 #' @param rank_barcodes A boolean (TRUE or FALSE) indicating whether or not to rank barcodes [default = TRUE].
 #' @param mitochondrial_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
 #' @param ribosomal_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
-#' @param label_apoptotic A boolean (TRUE or FALSE) indicating whether or not to label putative apoptotic cells [default = FALSE].
-#' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_apoptotic}
+#' @param label_dead A boolean (TRUE or FALSE) indicating whether or not to label putative dead cells [default = FALSE].
+#' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}
 #'
 #' @return A data frame containing quality metrics, as well as quality control labels (and if requested, apoptotic labels) for all barcodes passing the rank threshold.
 #' @export
@@ -81,11 +81,13 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   met$qc.pass <- "fail"
   met[ met$barcode %in% valid, "qc.pass"] <- "pass"
 
-  ## Run label_apoptotic
-  if (label_apoptotic) {
-     apoptotic <- R.utils::doCall(valiDrops::label_apoptotic, args = ..., alwaysArgs = list(counts = counts, metrics = met, qc.labels = setNames(as.character(met$qc), met$barcode)))	  
-     met$apoptotic <- "healthy"
-     met[ met$barcode %in% apoptotic, "apoptotic"] <- "apoptotic"
+  ## Run label_dead
+  if (label_dead) {
+     dead <- R.utils::doCall(valiDrops::label_dead, args = ..., alwaysArgs = list(counts = counts, metrics = met, qc.labels = setNames(as.character(met$qc), met$barcode)))	  
+     dead <- dead$metrics
+     met$label <- "live"
+     met[ met$barcode %in% dead[ dead$label == "dead","barcode"], "label"] <- "dead"
+     met[ met$barcode %in% dead[ dead$label == "uncertain","barcode"], "label"] <- "uncertain"
   }
 
   ## Return

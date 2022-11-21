@@ -22,9 +22,9 @@ valiDrops(
 
 \item{ribosomal_clusters}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
 
-\item{label_apoptotic}{A boolean (TRUE or FALSE) indicating whether or not to label putative apoptotic cells [default = FALSE].}
+\item{...}{Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}}
 
-\item{...}{Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_apoptotic}}
+\item{label_dead}{A boolean (TRUE or FALSE) indicating whether or not to label putative dead cells [default = FALSE].}
 }
 \value{
 A data frame containing quality metrics, as well as quality control labels (and if requested, apoptotic labels) for all barcodes passing the rank threshold.

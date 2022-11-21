@@ -2,11 +2,12 @@
 
 export(expression_filter)
 export(expression_metrics)
-export(label_apoptotic)
+export(label_dead)
 export(quality_filter)
 export(quality_metrics)
 export(rank_barcodes)
 export(valiDrops)
+import(BiocParallel)
 import(Matrix)
 import(R.utils)
 import(Seurat)
