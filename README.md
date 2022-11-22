@@ -78,5 +78,8 @@ rownames(valid.subset) <- valid.subset[,1]
 valid.subset <- valid.subset[, c(grep("fraction", colnames(valid.subset)),8)]
 data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
 data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
+
+# Create a Seurat object
+seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
 ```
 
