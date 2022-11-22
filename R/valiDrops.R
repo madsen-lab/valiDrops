@@ -59,6 +59,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
     threshold <- R.utils::doCall(valiDrops::rank_barcodes, args = ..., alwaysArgs = list(counts = counts))
 	  rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
   } else {
+    if (status) { message("Step 1: Removing barcodes with zero counts.")}
 	rank.pass <- colnames(counts)[which(colSums(counts) > 0)]
   }
 
@@ -96,7 +97,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
      met[ met$barcode %in% dead[ dead$label == "dead","barcode"], "label"] <- "dead"
      met[ met$barcode %in% dead[ dead$label == "uncertain","barcode"], "label"] <- "uncertain"
   }
-
+  
+  ## Output to user
+  if (status) { message(paste("\t", nrow(met[ met$qc.pass == "pass",]), " barcodes passed quality control.", sep=""))}
+  if (label_dead) { if (status) { message(paste("\t", nrow(met[ met$qc.pass == "pass" & met$label == "dead",]), " barcodes that passed quality control are predicted to be dead.", sep=""))} }
+  
   ## Return
   return(met)
 }
