@@ -82,12 +82,12 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
 
   ## Create a list
   ds <- list()
-  ds[[1]] <- as.data.frame(annotation[[1]])
-  ds[[2]] <- as.data.frame(annotation[[2]])
-  ds[[3]] <- as.data.frame(annotation[[3]])
-  ds[[4]] <- as.data.frame(annotation[[6]])
-  ds[[5]] <- as.data.frame(annotation[[5]])
-  ds[[6]] <- as.data.frame(annotation[[4]])
+  ds[[1]] <- as.data.frame(valiDrops:::annotation[[1]])
+  ds[[2]] <- as.data.frame(valiDrops:::annotation[[2]])
+  ds[[3]] <- as.data.frame(valiDrops:::annotation[[3]])
+  ds[[4]] <- as.data.frame(valiDrops:::annotation[[6]])
+  ds[[5]] <- as.data.frame(valiDrops:::annotation[[5]])
+  ds[[6]] <- as.data.frame(valiDrops:::annotation[[4]])
 
   ## Determine dataset
   if (species == "auto") {
