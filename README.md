@@ -40,45 +40,43 @@ rownames(data) <- features[,1]
 ## Run valiDrops
 valid <- valiDrops(data)
 
-## Setup data
+## SIMPLE: Create a Seurat object with the barcodes that pass quality control
+seu <- CreateSeuratObject(data[, colnames(data) %in% valid[ valid$qc.pass == "pass","barcode"]], min.cells = 1, min.features = 1)
+
+## ADVANCED: Create a Seurat object with the barcodes that pass quality control and import metadata calculated by valiDrops
+# Setup data to import the metadata collected by valiDrops
 valid.subset <- valid[ valid$qc.pass == "pass",]
 rownames(valid.subset) <- valid.subset[,1]
 valid.subset <- valid.subset[, grep("fraction", colnames(valid.subset))]
 data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
 data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
 
-## Create a Seurat object
+# Create a Seurat object
 seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
 ```
 
-# Detecting apoptotic cells
+# Detecting dead cells
 
-valiDrops can detect apoptotic cells by providing a flag to the valiDrops() function or by running the label_apoptotic() function seperately. Here, we demonstrate how to label apoptotic cells are part of the valiDrops workflow assuming you have already loaded libraries and imported your datasets.
+valiDrops can detect dead cells by providing a flag to the valiDrops() function or by running the label_dead() function seperately. Here, we demonstrate how to label dead cells are part of the valiDrops workflow assuming you have already loaded libraries and imported your datasets.
 
 ```{r}
 ## Run valiDrops
-valid <- valiDrops(data, label_apoptotic = TRUE)
+# Uncomment the line below to run without parallel processing in the dead cell prediction 
+# valid <- valiDrops(data, label_dead = TRUE)
 
-## Remove apoptotic cells and create a Seurat object
-# Setup data
-valid.subset <- valid[ valid$qc.pass == "pass" & valid$apoptotic == FALSE,]
-rownames(valid.subset) <- valid.subset[,1]
-valid.subset <- valid.subset[, grep("fraction", colnames(valid.subset))]
-data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
-data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
+# Comment the line below to stop running with parallel processing in the dead cell prediction
+# Depending on your system, you may use SnowParam() instead of MulticoreParam(). Get more information [here](https://bioconductor.org/packages/release/bioc/vignettes/BiocParallel/inst/doc/Introduction_To_BiocParallel.html).
+valid <- valiDrops(data, label_dead = TRUE, bpparam = BiocParallel::MulticoreParam())
 
-# Create a Seurat object
-seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
+## SIMPLE: Create a Seurat object with the barcodes that pass quality control and are predicted to be live
+seu <- CreateSeuratObject(data[, colnames(data) %in% valid[ valid$qc.pass == "pass" & valid$label == "live","barcode"]], min.cells = 1, min.features = 1)
 
-## Keep apoptotic cells, and create a Seurat object indicating which barcodes are likely to be apoptotic cells
-# Setup data
+## ADVANCED: Create a Seurat object with the barcodes that pass quality control, import metadata calculated by valiDrops including live/dead labels
+# Setup data to import the metadata collected by valiDrops
 valid.subset <- valid[ valid$qc.pass == "pass",]
 rownames(valid.subset) <- valid.subset[,1]
-valid.subset <- valid.subset[, grep("fraction", colnames(valid.subset))]
+valid.subset <- valid.subset[, c(grep("fraction", colnames(valid.subset)),8)]
 data.subset <- data[,colnames(data) %in% rownames(valid.subset)]
 data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))]
-
-# Create a Seurat object
-seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
 ```
 
