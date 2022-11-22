@@ -27,7 +27,7 @@ valiDrops(
 \item{...}{Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}}
 }
 \value{
-A data frame containing quality metrics, as well as quality control labels (and if requested, apoptotic labels) for all barcodes passing the rank threshold.
+A data frame containing quality metrics, as well as quality control labels (and if requested, dead labels) for all barcodes passing the rank threshold.
 }
 \description{
 Wrapper function that runs the entire valiDrops flow with default parameters.
