@@ -14,7 +14,7 @@ label_dead(
   n.min = 8,
   n.relabel = 1,
   feature.try = 3,
-  verbose = TRUE,
+  verbose = FALSE,
   label.thrs = NULL,
   label.frac = 0.1,
   nfeats = 2000,
@@ -54,7 +54,7 @@ label_dead(
 
 \item{feature.try}{An integer indicating the number of times to reduce the correlation threshold boundaries if no good solutions are found [default = 3].}
 
-\item{verbose}{A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].}
+\item{verbose}{A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = FALSE].}
 
 \item{label.thrs}{Threshold to use for soft-labeling barcodes as either dead or live. If set to NULL, automatic threshold identification. [default = NULL].}
 

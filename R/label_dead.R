@@ -11,7 +11,7 @@
 #' @param n.min An integer indicating the number of times a predicted label must be consistent to be retained [default = 8].
 #' @param n.relabel An integer indicating the number of dead cells to label if soft-labelling identifies no dead cells [default = 1].
 #' @param feature.try An integer indicating the number of times to reduce the correlation threshold boundaries if no good solutions are found [default = 3].
-#' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].
+#' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = FALSE].
 #' @param label.thrs Threshold to use for soft-labeling barcodes as either dead or live. If set to NULL, automatic threshold identification. [default = NULL].
 #' @param label.frac Maximum fraction of barcodes to soft-label as dead [default = 0.1].
 #' @param nfeats A number indicating the number of variable features to use for SVD [default = 2000].
@@ -40,7 +40,7 @@
 #' @import BiocParallel
 #' @import inflection
 #' 
-label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train = TRUE, rep = 10, n.min = 8, n.relabel = 1, feature.try = 3, verbose = TRUE, label.thrs = NULL, label.frac = 0.1, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 20, nfolds = 5, nrep = 10, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 10, min.dead = 100, max.live = 500, plot = TRUE, bpparam = SerialParam()) {
+label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train = TRUE, rep = 10, n.min = 8, n.relabel = 1, feature.try = 3, verbose = FALSE, label.thrs = NULL, label.frac = 0.1, nfeats = 2000, alpha = 0, npcs = 100, weight = TRUE, epochs = 20, nfolds = 5, nrep = 10, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 10, min.dead = 100, max.live = 500, plot = TRUE, bpparam = SerialParam()) {
   # Soft label the dataset
   metrics$logUMIs <- scale(metrics$logUMIs, scale = FALSE)
   metrics$logFeatures <- scale(metrics$logFeatures, scale = FALSE)

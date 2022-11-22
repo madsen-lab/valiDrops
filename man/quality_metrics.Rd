@@ -13,7 +13,7 @@ quality_metrics(
   mito = "auto",
   ribo = "auto",
   coding = "auto",
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ quality_metrics(
 
 \item{coding}{A vector of the identifiers for protein-coding genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of protein-coding genes [default = "auto"].}
 
-\item{verbose}{A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].}
+\item{verbose}{A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = FALSE].}
 }
 \value{
 A data frame object that contains the name of each barcode along with various quality metrics

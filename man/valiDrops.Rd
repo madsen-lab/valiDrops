@@ -10,6 +10,7 @@ valiDrops(
   mitochondrial_clusters = 3,
   ribosomal_clusters = 3,
   label_dead = FALSE,
+  status = TRUE,
   ...
 )
 }
@@ -23,6 +24,8 @@ valiDrops(
 \item{ribosomal_clusters}{NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3].}
 
 \item{label_dead}{A boolean (TRUE or FALSE) indicating whether or not to label putative dead cells [default = FALSE].}
+
+\item{status}{A boolean (TRUE or FALSE) indicating whether or not to print the progress of valiDrops [default = TRUE].}
 
 \item{...}{Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}}
 }

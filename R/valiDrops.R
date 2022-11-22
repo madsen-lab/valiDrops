@@ -7,6 +7,7 @@
 #' @param mitochondrial_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
 #' @param ribosomal_clusters NULL or an interger indicating how many deviations a cluster must be to be removed [default = 3]. 
 #' @param label_dead A boolean (TRUE or FALSE) indicating whether or not to label putative dead cells [default = FALSE].
+#' @param status A boolean (TRUE or FALSE) indicating whether or not to print the progress of valiDrops [default = TRUE].
 #' @param ... Pass parameters to functions within valiDrops. See \link{rank_barcodes} \link{quality_metrics} \link{quality_filter} \link{expression_metrics} \link{expression_filter} \link{label_dead}
 #'
 #' @return A data frame containing quality metrics, as well as quality control labels (and if requested, dead labels) for all barcodes passing the rank threshold.
@@ -16,7 +17,7 @@
 #' @import Seurat
 #' @import SingleCellExperiment
 
-valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_dead = FALSE, ...) {
+valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_dead = FALSE, status = TRUE, ...) {
   ## Check the rank_barcodes parameter
   if (!isTRUE(rank_barcodes) & !isFALSE(rank_barcodes)) { stop("rank_barcodes must be either TRUE or FALSE") }
 
@@ -54,8 +55,9 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
 
   ## Run rank_barcodes
   if (rank_barcodes) {
+    if (status) { message("Step 1: Filtering on the barcode-rank plot.")}
     threshold <- R.utils::doCall(valiDrops::rank_barcodes, args = ..., alwaysArgs = list(counts = counts))
-	rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
+	  rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
   } else {
 	rank.pass <- colnames(counts)[which(colSums(counts) > 0)]
   }
@@ -64,16 +66,20 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   counts.subset <- counts[, colnames(counts) %in% rank.pass]
 
   ## Run quality_metrics
+  if (status) { message("Step 2: Collecting quality metrics.")}
   metrics <- R.utils::doCall(valiDrops::quality_metrics, args = ..., alwaysArgs = list(counts = counts.subset))
 
   ## Run quality_filter
+  if (status) { message("Step 3: Filtering on quality metrics.")}
   qc.pass <- R.utils::doCall(valiDrops::quality_filter, args = ..., alwaysArgs = list(metrics = metrics$metrics))
 
   ## Run expression_metrics
+  if (status) { message("Step 4: Collecting expression-based metrics.")}
   counts.subset.filtered <- counts.subset[ rownames(counts.subset) %in% metrics$protein_coding, colnames(counts.subset) %in% qc.pass$final]
   expr.metrics <- R.utils::doCall(valiDrops::expression_metrics, args = ..., alwaysArgs = list(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal))
 
   ## Run expression_filter
+  if (status) { message("Step 5: Filtering on expression-based metrics.")}
   valid <- R.utils::doCall(valiDrops::expression_filter, args = ..., alwaysArgs = list(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters))
 
   ## Setup the results
@@ -83,6 +89,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
 
   ## Run label_dead
   if (label_dead) {
+    if (status) { message("Step 6: Predicting dead cells.")}
      dead <- R.utils::doCall(valiDrops::label_dead, args = ..., alwaysArgs = list(counts = counts, metrics = met, qc.labels = setNames(as.character(met$qc), met$barcode)))	  
      dead <- dead$metrics
      met$label <- "live"

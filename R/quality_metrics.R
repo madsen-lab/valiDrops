@@ -10,7 +10,7 @@
 #' @param coding A vector of the identifiers for protein-coding genes or "auto". If set to "auto", valiDrops will automatically find the identifiers of protein-coding genes [default = "auto"].
 #' @param species A character identifying the species of origin or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the species if possible [default = "auto"].
 #' @param annotation A character identifying the gene annotation or "auto". See details for more information. If set to "auto", valiDrops will automatically determine the gene annotation if possible [default = "auto"].
-#' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = TRUE].
+#' @param verbose A boolean (TRUE or FALSE) indicating whether or not to be verbose [default = FALSE].
 #'
 #' @details
 #' \strong{Using a contrast matrix}\cr
@@ -29,7 +29,7 @@
 #' @export
 #' @import Matrix
 
-quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto", verbose = TRUE) {
+quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto", verbose = FALSE) {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
