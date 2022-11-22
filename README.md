@@ -65,7 +65,7 @@ valiDrops can detect dead cells by providing a flag to the valiDrops() function 
 # valid <- valiDrops(data, label_dead = TRUE)
 
 # Comment the line below to stop running with parallel processing in the dead cell prediction
-# Depending on your system, you may use SnowParam() instead of MulticoreParam(). Get more information [here](https://bioconductor.org/packages/release/bioc/vignettes/BiocParallel/inst/doc/Introduction_To_BiocParallel.html).
+# Depending on your system, you may use SnowParam() instead of MulticoreParam(). Get more information in the BiocParallel vignette.
 valid <- valiDrops(data, label_dead = TRUE, bpparam = BiocParallel::MulticoreParam())
 
 ## SIMPLE: Create a Seurat object with the barcodes that pass quality control and are predicted to be live
