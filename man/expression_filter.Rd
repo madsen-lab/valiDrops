@@ -15,7 +15,7 @@ expression_filter(
   min.diff.pct = 0.2,
   min.de.frac = 0.01,
   min.significance.level = NULL,
-  plot = TRUE
+  plot = FALSE
 )
 }
 \arguments{
@@ -39,7 +39,7 @@ expression_filter(
 
 \item{min.significance.level}{A number indicating the minimum significance level of the most signficiant marker gene for a cluster to pass filtering. Set to NULL to identify the threshold automatically [default = NULL].}
 
-\item{plot}{A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = TRUE]}
+\item{plot}{A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = FALSE]}
 }
 \value{
 A vector of valid barcodes

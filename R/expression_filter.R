@@ -12,14 +12,14 @@
 #' @param min.diff.pct A number indicating the minimum difference in percent of barcodes within versus outside a cluster that expresses top.n marker genes [default = 0.2].
 #' @param min.de.frac A number indicating the minimum fraction of tested genes that must be significant for a cluster to pass filtering [default = 0.01]
 #' @param min.significance.level A number indicating the minimum significance level of the most signficiant marker gene for a cluster to pass filtering. Set to NULL to identify the threshold automatically [default = NULL].
-#' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = TRUE]
+#' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = FALSE]
 #'
 #' @return A vector of valid barcodes
 #' @import segmented
 #' @export
 
 #finding valid barcodes
-expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = TRUE) {
+expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE) {
   ## evaluate arguments
   # min.significant argument
   if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)

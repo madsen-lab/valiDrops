@@ -144,7 +144,7 @@ label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train =
   
   # Plot if requested
   if (plot) {
-	plot(sort(metrics$score), las = 1, ylab="Score", xlab="Rank")
+	plot(sort(metrics$score), las = 1, ylab="Score", xlab="Rank", pch = 16)
 	abline(h = label.thrs, col="red", lty=2)
   }
   
