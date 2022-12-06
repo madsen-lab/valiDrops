@@ -143,56 +143,59 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
     features.diff <- names(x = which(x = fc >= 0.25))
     features <- intersect(x = features, y = features.diff)
     
-    # Setup test
-    y <- rep("excluded", ncol(norm_transform))
-    y[which(colnames(norm_transform) %in% target)] <- "target"
-    y[which(colnames(norm_transform) %in% rest)] <- "rest"
+    # Only proceed if at least two genes passed filtering
+    if (length(features) >= 2) {    
+      # Setup test
+      y <- rep("excluded", ncol(norm_transform))
+      y[which(colnames(norm_transform) %in% target)] <- "target"
+      y[which(colnames(norm_transform) %in% rest)] <- "rest"
 
-    # Run test depending on method
-    if (presto.flag) {
-	wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
-	wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
-	wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
-	wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
-	rownames(wilcox.res) <- wilcox.res$feature
-    } else {
-	wilcox.res <- as.data.frame(matrix(ncol=2, nrow=length(features)))
-	rownames(wilcox.res) <- features
-	colnames(wilcox.res) <- c("Pvalue","FDR")
-	for (feat in features) {
-		wilcox.res[ feat,1] <- wilcox.test(norm_transform[ feat, which(y=="target")], norm_transform[ feat, which(y=="rest")])$p.value
-	}
-	wilcox.res[,2] <- p.adjust(wilcox.res[,1], method="bonferroni", n = nrow(nonzero))
-    }
+      # Run test depending on method
+      if (presto.flag) {
+	  wilcox.res <- presto::wilcoxauc(X = norm_transform[features,], y = y, groups_use = c("target","rest"))
+	  wilcox.res <- wilcox.res[ wilcox.res$group == "target",]
+	  wilcox.res <- wilcox.res[ order(wilcox.res$pval),]
+	  wilcox.res$FDR <- p.adjust(wilcox.res$pval, method="bonferroni", n = nrow(nonzero))
+	  rownames(wilcox.res) <- wilcox.res$feature
+      } else {
+	  wilcox.res <- as.data.frame(matrix(ncol=2, nrow=length(features)))
+	  rownames(wilcox.res) <- features
+	  colnames(wilcox.res) <- c("Pvalue","FDR")
+	  for (feat in features) {
+	  	wilcox.res[ feat,1] <- wilcox.test(norm_transform[ feat, which(y=="target")], norm_transform[ feat, which(y=="rest")])$p.value
+	  }
+	  wilcox.res[,2] <- p.adjust(wilcox.res[,1], method="bonferroni", n = nrow(nonzero))
+      }
 
-    # Collect stats
-    stats[counter,1] <- cl.idx
-    stats[counter,2] <- mean(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
-    stats[counter,3] <- mean(pct.1[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
-    stats[counter,4] <- mean(pct.2[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
-    stats[counter,5] <- sum(wilcox.res$FDR <= 0.05)
-    stats[counter,6] <- nrow(wilcox.res)
-    stats[counter,7] <- sum(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])] < -0.01)
-    stats[counter,8] <- min(wilcox.res$FDR)
-    stats[counter,9] <- 0
-    if (length(mito[mito %in% rownames(nonzero[,target])]) > 0) {
-    	stats[counter, 10] <- median((colSums(nonzero[mito[mito %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
-    } else {
-	stats[counter, 10] <- 0
+      # Collect stats
+      stats[counter,1] <- cl.idx
+      stats[counter,2] <- mean(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
+      stats[counter,3] <- mean(pct.1[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
+      stats[counter,4] <- mean(pct.2[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])])
+      stats[counter,5] <- sum(wilcox.res$FDR <= 0.05)
+      stats[counter,6] <- nrow(wilcox.res)
+      stats[counter,7] <- sum(pct.diff[ rownames(wilcox.res[1:min(c(sum(wilcox.res$FDR <= 0.05), top.n)),])] < -0.01)
+      stats[counter,8] <- min(wilcox.res$FDR)
+      stats[counter,9] <- 0
+      if (length(mito[mito %in% rownames(nonzero[,target])]) > 0) {
+    	  stats[counter, 10] <- median((colSums(nonzero[mito[mito %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
+      } else {
+	  stats[counter, 10] <- 0
+      }
+      if (length(ribo[ribo %in% rownames(nonzero[,target])]) > 0) {
+    	  stats[counter, 11] <- median((colSums(nonzero[ribo[ribo %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
+      } else {
+  	  stats[counter, 11] <- 0
+      }
+      counter <- counter + 1
     }
-    if (length(ribo[ribo %in% rownames(nonzero[,target])]) > 0) {
-    	stats[counter, 11] <- median((colSums(nonzero[ribo[ribo %in% rownames(nonzero[,target])],target]) / colSums(nonzero[,target])))
-    } else {
-	stats[counter, 11] <- 0
-    }
-    counter <- counter + 1
   }
-  
-  # Remove barcodes with a negative percentual difference
+
+  # Calculate fractions and set colnames
   stats[,9] <- stats[,5] / stats[,6]
   colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction","mito_fraction", "ribo_fraction")
   
-  #output
+  # Output
   output <- list(stats = stats, clusters = clusters.deep)
   return(output)
 }
