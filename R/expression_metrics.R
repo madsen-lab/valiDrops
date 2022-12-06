@@ -192,6 +192,7 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   }
 
   # Calculate fractions and set colnames
+  stats <- stats[!is.na(stats[,2]),]	
   stats[,9] <- stats[,5] / stats[,6]
   colnames(stats) <- c("cluster","pct.diff","pct.1","pct.2","n_de","n_total","n_negative","min_fdr","de_fraction","mito_fraction", "ribo_fraction")
   
