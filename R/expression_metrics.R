@@ -66,7 +66,7 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   norm_transform@x <- log1p(norm_transform@x)
   
   # Variable features for the full dataset
-  dev <- scry::devianceFeatureSelection(as.matrix(nonzero))
+  dev <- scry::devianceFeatureSelection(nonzero)
   var.feats <- names(which(rank(-dev) <= nfeats))
   
   ## Clustering
