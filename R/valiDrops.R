@@ -62,6 +62,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
     if (status) { message("Step 1: Removing barcodes with zero counts.")}
 	rank.pass <- colnames(counts)[which(colSums(counts) > 0)]
   }
+	
+  ## Check the number of barcodes that pass initial filtering
+  if (length(rank.pass) > 20000) {
+     message("More than 20.000 barcodes passed initial filtering. It is like that breakpoint estimation did not work satisfactorily. If it didn't, you can try to increase alpha, alpha.max and/or psi.max in the rank_barcodes() function.")
+  }
 
   ## Subset the counts
   counts.subset <- counts[, colnames(counts) %in% rank.pass]
