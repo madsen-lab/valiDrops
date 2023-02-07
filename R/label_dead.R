@@ -163,7 +163,7 @@ label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train =
 	  norm_transform@x <- log1p(norm_transform@x)
 
 	  # Find variable features
-	  dev <- scry::devianceFeatureSelection(as.matrix(nonzero))
+	  dev <- scry::devianceFeatureSelection(nonzero)
 	  var.feats <- names(which(rank(-dev) <= nfeats))
 
 	  # Scaling and SVD
