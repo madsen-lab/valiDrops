@@ -34,7 +34,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
   if(missing(counts)) {
     stop('No count matrix was provided', call. = FALSE)
   } else {
-    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
+    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
   }
   
   # type argument
