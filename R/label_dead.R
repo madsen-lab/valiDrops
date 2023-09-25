@@ -156,7 +156,7 @@ label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train =
 	  if (verbose) { message("Running feature selection and dimensional reduction") }
 	  # Normalize and log transform counts
 	  counts <- counts[ , colnames(counts) %in% metrics$barcode]
-	  counts <- counts[, match(metrics$barcode, colnames(counts)),]
+	  counts <- counts[, match(metrics$barcode, colnames(counts))]
 	  nonzero <-  counts[ Matrix::rowSums(counts) > 0,]
 	  sf <- 10000 / Matrix::colSums(nonzero)
 	  norm_transform <- Matrix::t(Matrix::t(nonzero) * sf)
