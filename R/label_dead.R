@@ -102,7 +102,7 @@ label_dead <- function(counts, metrics, qc.labels, cor.threshold = NULL, train =
 				stop <- 1
 			}
 		} else {
-			if (max.quantile >= 0.95) {
+			if (max.quantile >= 0.85) {
 				label.thrs <- new.thrs
 				flag <- "Failed"
 				stop <- 1
