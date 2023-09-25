@@ -35,7 +35,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   if(missing(counts)) {
     stop('No count matrix was provided', call. = FALSE)
   } else {
-    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
+    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
   }
 
   # species arugment
@@ -50,7 +50,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
 
   # contrast matrix
   if(!is.null(contrast)) {
-    if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
+    if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
   }
 
   # contrast_type argument
@@ -75,7 +75,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("verbose must be either TRUE or FALSE") }
 
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
-  if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
+  if(class(counts) == "matrix") { counts = as(counts, "dgCMatrix") }
 
   ## create a list for holding the output
   output <- list()
