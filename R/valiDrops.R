@@ -51,11 +51,23 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   if(missing(counts)) {
     stop('No count matrix was provided', call. = FALSE)
   } else {
-    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix', call. = FALSE) }
+    if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix", "DelayedMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, and DelayedMatrix', call. = FALSE) }
   }
   
-  ## convert the counts into dgCMatrix if its class() is not dgCMatrix
-  if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
+  ## convert the counts into dgCMatrix if its a dense matrix
+  if(class(counts) == "matrix") { 
+    counts = as(counts, "dgCMatrix")
+  }
+
+  ## Check for column and rownames
+  if (is.null(colnames(counts))) {
+    if (status) { message("Input check: No column names found. Setting to Setting cell names to cell_columnidx (e.g 'cell_1')") }
+    colnames(counts) <- paste("cell", 1:ncol(counts), sep="_")
+  }
+  if (is.null(rownames(counts))) {
+    if (status) { message("Input check: No row names found. Setting to Setting cell names to feature_rowidx (e.g 'feature_1')") }
+    rownames(counts) <- paste("feature", 1:nrow(counts), sep="_")
+  }
   
   ## Run rank_barcodes
   if (rank_barcodes) {
@@ -74,7 +86,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   
   ## Subset the counts
   counts.subset <- counts[, colnames(counts) %in% rank.pass]
-  
+
   ## Run quality_metrics
   if (status) { message("Step 2: Collecting quality metrics.")}
   metrics <- R.utils::doCall(valiDrops::quality_metrics, args = ..., alwaysArgs = list(counts = counts.subset))
@@ -84,9 +96,14 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   qc.pass <- R.utils::doCall(valiDrops::quality_filter, args = ..., alwaysArgs = list(metrics = metrics$metrics))
   
   if (stageThree) {
-    ## Run expression_metrics
+    ## Convert counts to Seurat capatible format
     if (status) { message("Step 4: Collecting expression-based metrics.")}
     counts.subset.filtered <- counts.subset[ rownames(counts.subset) %in% metrics$protein_coding, colnames(counts.subset) %in% qc.pass$final]
+    if(class(counts.subset.filtered) != "dgCMatrix") { 
+      counts.subset.filtered = as(counts.subset.filtered, "dgCMatrix")
+    }
+
+    ## Run expression_matrix
     expr.metrics <- R.utils::doCall(valiDrops::expression_metrics, args = ..., alwaysArgs = list(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal))
     
     ## Run expression_filter
