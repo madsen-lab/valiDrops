@@ -83,3 +83,25 @@ data.subset <- data.subset[,match(rownames(valid.subset), colnames(data.subset))
 seu <- CreateSeuratObject(data.subset, project = "valiDrops", meta.data = valid.subset, min.cells = 1, min.features = 1)
 ```
 
+# Obtaining data for testing valiDrops
+
+Testing data can be easily obtained using the [DropletTestFiles](https://bioconductor.org/packages/release/data/experiment/html/DropletTestFiles.html) and [DropletUtils](https://bioconductor.org/packages/release/bioc/html/DropletUtils.html) packages from Bioconductor. 
+
+```{r}
+## Load libraries
+library(DropletTestFiles)
+library(DropletUtils)
+
+## Import a dataset for testing
+path <- getTestFile("tenx-2.1.0-pbmc4k/1.0.0/raw.h5", prefix=TRUE)
+data <- DropletUtils::read10xCounts(path, type = "HDF5")
+
+## Run valiDrops
+valid <- valiDrops(data)
+```
+
+# Citation
+If you use valiDrops in your work, please consider citing our manuscript:
+
+_Kavaliauskaite G and Madsen JGS **Automatic quality control of single-cell and single-nucleus RNA-seq using valiDrops (2023)** bioRxiv_  <br/>
+
