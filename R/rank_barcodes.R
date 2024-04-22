@@ -98,7 +98,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
       rmse[counter,3] <- counter
       models[[counter]] <- out
       counter <- counter + 1
-    } else if (any(grepl("psi values too close", out[[1]]))) {
+    } else if (any(grepl("psi starting values too close", out[[1]]))) {
 		  stop = 0
 		  while (stop == 0) {
 			  curr.alpha <- curr.alpha + alpha
