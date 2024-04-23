@@ -78,7 +78,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = T
   ## Run rank_barcodes
   if (rank_barcodes) {
     if (status) { message("Step 1: Filtering on the barcode-rank plot.")}
-    threshold <- valiDrops::rank_barcodes(counts = counts, type = type, psi.min = psi.min, psi.max = psi.max, alpha = alpha, alpha.max = alpha.max, boot = boot, factor = factor, threshold = threshold, plot = plot))
+    threshold <- valiDrops::rank_barcodes(counts = counts, type = type, psi.min = psi.min, psi.max = psi.max, alpha = alpha, alpha.max = alpha.max, boot = boot, factor = factor, threshold = threshold, plot = plot)
     rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
   } else {
     if (status) { message("Step 1: Removing barcodes with zero counts.")}
@@ -99,7 +99,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = T
   
   ## Run quality_filter
   if (status) { message("Step 3: Filtering on quality metrics.")}
-  qc.pass <- valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot))
+  qc.pass <- valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot)
   
   if (stageThree) {
     ## Convert counts to Seurat capatible format
@@ -110,11 +110,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = T
     }
 
     ## Run expression_matrix
-    expr.metrics <- valiDrops::expression_metrics(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal, nfeats = nfeats, npcs = min(npcs, ncol(counts.subset.filtered)), k.min = k.min, res.shallow = res.shallow, top.n = top.n))
+    expr.metrics <- valiDrops::expression_metrics(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal, nfeats = nfeats, npcs = min(npcs, ncol(counts.subset.filtered)), k.min = k.min, res.shallow = res.shallow, top.n = top.n)
     
     ## Run expression_filter
     if (status) { message("Step 5: Filtering on expression-based metrics.")}
-    valid <- valiDrops::expression_filter(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters, min.significant = min.significant, min.target.pct = min.target.pct, max.background.pct = max.background.pct, min.diff.pct = min.diff.pct, min.de.frac = min.de.frac, min.significance.level = min.significance.level, plot = plot))
+    valid <- valiDrops::expression_filter(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters, min.significant = min.significant, min.target.pct = min.target.pct, max.background.pct = max.background.pct, min.diff.pct = min.diff.pct, min.de.frac = min.de.frac, min.significance.level = min.significance.level, plot = plot)
   } else {
     valid <- qc.pass$final
   }
