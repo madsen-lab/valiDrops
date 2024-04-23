@@ -18,7 +18,13 @@
 #' @import Seurat
 #' @import SingleCellExperiment
 
-valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, ribosomal_clusters = 3, label_dead = FALSE, status = TRUE, stageThree = TRUE, ...) {
+valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = TRUE, label_dead = FALSE, plot = TRUE, verbose = TRUE,
+                    type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE,
+                    contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto",
+                    mitol = TRUE, distancel = TRUE, codingl = TRUE, contrastl = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3,
+                    nfeats = 5000, npcs = 30, k.min = 5, res.shallow = 0.1, top.n = 10,
+                    mitochondrial_clusters = 3, ribosomal_clusters = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL,
+                    cor.threshold = NULL, train = TRUE, rep = 10, n.min = 8, n.relabel = 1, feature.try = 3, label.thrs = NULL, label.frac = 0.1, nfeats2 = 2000, alpha2 = 0, npcs2 = 100, weight = TRUE, epochs = 20, nfolds = 5, nrep = 10, fail.weight = 0.2, cor.min = 0.0001, cor.max = 0.005, cor.steps = 50, nrep.cor = 10, min.dead = 100, max.live = 500, bpparam = SerialParam()) {
   ## Check the rank_barcodes parameter
   if (!isTRUE(rank_barcodes) & !isFALSE(rank_barcodes)) { stop("rank_barcodes must be either TRUE or FALSE") }
   
@@ -72,7 +78,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
   ## Run rank_barcodes
   if (rank_barcodes) {
     if (status) { message("Step 1: Filtering on the barcode-rank plot.")}
-    threshold <- R.utils::doCall(valiDrops::rank_barcodes, args = ..., alwaysArgs = list(counts = counts))
+    threshold <- valiDrops::rank_barcodes(counts = counts, type = type, psi.min = psi.min, psi.max = psi.max, alpha = alpha, alpha.max = alpha.max, boot = boot, factor = factor, threshold = threshold, plot = plot))
     rank.pass <- rownames(threshold$ranks[ threshold$ranks$counts >= threshold$lower.threshold,])
   } else {
     if (status) { message("Step 1: Removing barcodes with zero counts.")}
@@ -89,11 +95,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
 
   ## Run quality_metrics
   if (status) { message("Step 2: Collecting quality metrics.")}
-  metrics <- R.utils::doCall(valiDrops::quality_metrics, args = ..., alwaysArgs = list(counts = counts.subset))
+  metrics <- valiDrops::quality_metrics(counts = counts.subset, contrast = contrast, contrast_type = contrast_type, species = species, annotation = annotation, mito = mito, ribo = ribo, coding = coding, verbose = verbose)
   
   ## Run quality_filter
   if (status) { message("Step 3: Filtering on quality metrics.")}
-  qc.pass <- R.utils::doCall(valiDrops::quality_filter, args = ..., alwaysArgs = list(metrics = metrics$metrics))
+  qc.pass <- valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot))
   
   if (stageThree) {
     ## Convert counts to Seurat capatible format
@@ -104,11 +110,11 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
     }
 
     ## Run expression_matrix
-    expr.metrics <- R.utils::doCall(valiDrops::expression_metrics, args = ..., alwaysArgs = list(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal))
+    expr.metrics <- valiDrops::expression_metrics(counts = counts.subset.filtered, mito = metrics$mitochondrial, ribo = metrics$ribosomal, nfeats = nfeats, npcs = min(npcs, ncol(counts.subset.filtered)), k.min = k.min, res.shallow = res.shallow, top.n = top.n))
     
     ## Run expression_filter
     if (status) { message("Step 5: Filtering on expression-based metrics.")}
-    valid <- R.utils::doCall(valiDrops::expression_filter, args = ..., alwaysArgs = list(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters))
+    valid <- valiDrops::expression_filter(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters, min.significant = min.significant, min.target.pct = min.target.pct, max.background.pct = max.background.pct, min.diff.pct = min.diff.pct, min.de.frac = min.de.frac, min.significance.level = min.significance.level, plot = plot))
   } else {
     valid <- qc.pass$final
   }
@@ -123,7 +129,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, mitochondrial_clusters = 3, r
     if (status) { 
       if (stageThree) { message("Step 6: Predicting dead cells.") } else { message("Step 4: Predicting dead cells without running stage 3. CAUTION this has not been tested.") }
     }
-    dead <- R.utils::doCall(valiDrops::label_dead, args = ..., alwaysArgs = list(counts = counts, metrics = met, qc.labels = setNames(as.character(met$qc), met$barcode)))	  
+    dead <- valiDrops::label_dead(counts = counts, metrics = met, qc.labels = setNames(as.character(met$qc), met$barcode), cor.threshold = cor.threshold, train = train, rep = rep, n.min = n.min, n.relabel = n.relabel, feature.try = feature.try, verbose = FALSE, label.thrs = label.thrs, label.frac = label.frac, nfeats = nfeats2, alpha = alpha2, npcs = npcs2, weight = weight, epochs = epochs, nfolds = nfolds, nrep = nrep, fail.weight = fail.weight, cor.min = cor.min, cor.max = cor.max, cor.steps = cor.steps, nrep.cor = nrep.cor, min.dead = min.dead, max.live = max.live, plot = plot, bpparam = bpparam)	  
     dead <- dead$metrics
     met$label <- "live"
     met[ met$barcode %in% dead[ dead$label == "dead","barcode"], "label"] <- "dead"
