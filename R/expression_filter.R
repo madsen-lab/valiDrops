@@ -60,7 +60,7 @@ expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significan
     x <- -log10(subset[, 8])
     threshold.significance.level <- median(x[y <= 0.4]) + (robustbase::Sn(x[y <= 0.4]) * 3)
     model <- lm(y ~ x)
-    model.significance.level <- segmented::segmented(model, npsi = 1, control = seg.control(quant = TRUE))$psi[2]
+    model.significance.level <- segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = TRUE))$psi[2]
     min.significance.level <- min(threshold.significance.level, model.significance.level, na.rm=TRUE)
   }
   
