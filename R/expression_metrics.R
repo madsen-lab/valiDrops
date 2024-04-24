@@ -92,7 +92,17 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   ### Clustering
   ## Shallow
   clusters.shallow <- Seurat::FindClusters(snn, verbose=F, res=res.shallow)
-  
+  if(length(unique(clusters.shallow[,1])) == 1){
+	  stop = 0
+	  while(stop == 0){
+		  res.shallow = res.shallow + 0.1
+		  clusters.shallow <- Seurat::FindClusters(snn, verbose=F, res=res.shallow)
+		  if(length(unique(clusters.shallow[,1])) > 1){
+			  stop = 1
+		  }
+	  }
+  }
+
   ## Deep
   # Coarse clustering and processing
   clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,20, by = 1))
