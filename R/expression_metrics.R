@@ -105,7 +105,23 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
 
   ## Deep
   # Coarse clustering and processing
-  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,20, by = 1))
+  clusters.deep <- as.data.frame(matrix(nrow = length(snn@Dimnames[[1]]), ncol = 20, dimnames = list(snn@Dimnames[[1]], NULL)))
+  fails <- numeric(20)
+  for(i in 1:20){
+	  tryCatch(clusters.deep[,i] <- Seurat::FindClusters(snn, verbose=F, res=i),
+		   error = function(e) {
+			   message(paste0("Limiting deep clustering resolution to ", i))
+			   fails[i] <<- 1
+		   })
+	  if(fails[i] == 1){
+		  break()
+	  }
+  }
+  if(is.element(1, fails)){
+	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,(match(1, fails) - 1),by=(match(1, fails) - 1)/20))
+  } else{
+	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,20,by=1))
+  }
   mins <- apply(clusters.deep,2,FUN=function(x) { min(table(x))})
   closest <- min(abs(mins - k.min))
   close.res <- as.numeric(substr(names(which(abs(mins - k.min) == closest)),5,100))
