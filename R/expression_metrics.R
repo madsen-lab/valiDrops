@@ -130,7 +130,23 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   fine.res <- unique(fine.res)
   
   # Fine clustering and processing
-  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=fine.res)
+  clusters.deep <- as.data.frame(matrix(nrow = length(snn@Dimnames[[1]]), ncol = length(fine.res), dimnames = list(snn@Dimnames[[1]], NULL)))
+  fails <- numeric(length(fine.res))
+  for(i in 1:length(fine.res)){
+	  tryCatch(clusters.deep[,i] <- Seurat::FindClusters(snn, verbose=F, res=fine.res[i]),
+		   error = function(e) {
+			   message(paste0("Limiting deep clustering resolution to ", fine.res[i]))
+			   fails[i] <<- 1
+		   })
+	  if(fails[i] == 1){
+		  break()
+	  }
+  }
+  if(is.element(1, fails)){
+	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=fine.res[1:match(1, fails) - 1])
+  } else{
+	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=fine.res)
+  }
   res.deep <- as.numeric(substr(names(which.max(which(apply(clusters.deep,2,FUN=function(x) { min(table(x))}) == k.min))),5,100))
   if (identical(res.deep, numeric(0))) {
     mins <- apply(clusters.deep,2,FUN=function(x) { min(table(x))})
