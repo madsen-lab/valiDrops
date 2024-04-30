@@ -23,7 +23,7 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
   ## evaluate arguments
   # metrics matrix
   if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
@@ -84,11 +84,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         stop <- 0
         metrics.subsample <- metrics[ sample(1:nrow(metrics), sample.size),]
         model <- lm(logFeatures ~ mitochondrial_fraction, data = metrics.subsample)
-        seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = 1e-25, maxit.glm = 500, h = 0.05))
+        seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
         if (min(seg$psi[,2]) > mito.max) { stop <- 1 }
           while (stop == 1) {
             psi <- psi + 1
-            seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = 1e-25, maxit.glm = 500, h = 0.05))
+            seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
             if (psi >= 5 | min(seg$psi[,2]) <= mito.max) { stop <- 0 }
           }		
           mito.thresholds <- c(mito.thresholds, min(seg$psi[,2]))
@@ -124,7 +124,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
       # Segmented model
       model <- lm(logFeatures ~ logUMIs, data = metrics)
       while (floor(npsi) >= 1) {
-	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi), control = segmented::seg.control(quant = TRUE, tol = 1e-25, maxit.glm = 500, h = 0.05)))
+	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi), control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h)))
 	if (class(out)[1] == "segmented") {
 	  break
 	} else {
