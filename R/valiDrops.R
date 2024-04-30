@@ -18,7 +18,7 @@
 #' @import Seurat
 #' @import SingleCellExperiment
 
-valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = TRUE, label_dead = FALSE, plot = TRUE, verbose = TRUE,
+valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = TRUE, label_dead = FALSE, plot = TRUE, verbose = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01,
                     type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE,
                     contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto",
                     mitol = TRUE, distancel = TRUE, codingl = TRUE, contrastl = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3,
@@ -99,7 +99,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = T
   
   ## Run quality_filter
   if (status) { message("Step 3: Filtering on quality metrics.")}
-  qc.pass <- valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot)
+  qc.pass <- valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot, tol = tol, maxit.glm = maxit.glm, h = h)
   
   if (stageThree) {
     ## Convert counts to Seurat capatible format
@@ -114,7 +114,7 @@ valiDrops = function(counts, rank_barcodes = TRUE, status = TRUE, stageThree = T
     
     ## Run expression_filter
     if (status) { message("Step 5: Filtering on expression-based metrics.")}
-    valid <- valiDrops::expression_filter(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters, min.significant = min.significant, min.target.pct = min.target.pct, max.background.pct = max.background.pct, min.diff.pct = min.diff.pct, min.de.frac = min.de.frac, min.significance.level = min.significance.level, plot = plot)
+    valid <- valiDrops::expression_filter(stats = expr.metrics$stats, clusters = expr.metrics$clusters, mito = mitochondrial_clusters, ribo = ribosomal_clusters, min.significant = min.significant, min.target.pct = min.target.pct, max.background.pct = max.background.pct, min.diff.pct = min.diff.pct, min.de.frac = min.de.frac, min.significance.level = min.significance.level, plot = plot, tol = tol, maxit.glm = maxit.glm, h = h)
   } else {
     valid <- qc.pass$final
   }
