@@ -19,7 +19,7 @@
 #' @export
 
 #finding valid barcodes
-expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE) {
+expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
   ## evaluate arguments
   # min.significant argument
   if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
@@ -54,7 +54,7 @@ expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significan
   if(class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
 
   # model function to return error if necessary
-  model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = TRUE, tol = 1e-25, maxit.glm = 500, h = 0.05))$psi[2]}, error = function(e){NA})}
+  model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e){NA})}
   
   # Find threshold on significance level
   if (is.null(min.significance.level)) {
