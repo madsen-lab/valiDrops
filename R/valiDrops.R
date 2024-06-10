@@ -104,13 +104,15 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
   qc.pass <- R.utils::withTimeout({valiDrops::quality_filter(metrics = metrics$metrics, mito = mitol, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot, tol = tol, maxit.glm = maxit.glm, h = h)},
                                    timeout = timeout,
                                    onTimeout = "error")
-  if(!is.null(filtered_counts) & length(qc.pass$final) >= 2*ncol(filtered_counts)){
-    to_continue <- readline(prompt = "More than twice as many cells detected than in the filtered matrix. Type [Y] if you would like to continue and [N] if not: ")
-    if(to_continue %in% c("N", "No", "n", "no")){
-      stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
+  if(!is.null(filtered_counts)){
+    if(length(qc.pass$final) >= 2*ncol(filtered_counts)){
+      to_continue <- readline(prompt = "More than twice as many cells detected than in the filtered matrix. Type [Y] if you would like to continue and [N] if not: ")
+      if(to_continue %in% c("N", "No", "n", "no")){
+        stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
+      }
     }
   }
-  
+      
   if (stageThree) {
     ## Convert counts to Seurat capatible format
     if (status) { message("Step 4: Collecting expression-based metrics.")}
