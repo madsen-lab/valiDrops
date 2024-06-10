@@ -108,6 +108,7 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
     to_continue <- readline(prompt = "More than twice as many cells detected than in the filtered matrix. Type [Y] if you would like to continue and [N] if not: ")
     if(to_continue %in% c("N", "No", "n", "no")){
       stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
+    }
   }
   
   if (stageThree) {
