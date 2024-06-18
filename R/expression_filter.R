@@ -70,7 +70,7 @@ expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significan
   if(class(quant) != "logical") stop('quant needs to be a boolean (TRUE or FALSE)', call. = FALSE)
 
   # model function to return error if necessary
-  model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e){NA})}
+  model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = quant, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e){NA})}
   
   # Find threshold on significance level
   if (is.null(min.significance.level)) {
