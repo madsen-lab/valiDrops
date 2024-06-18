@@ -13,13 +13,17 @@
 #' @param min.de.frac A number indicating the minimum fraction of tested genes that must be significant for a cluster to pass filtering [default = 0.01]
 #' @param min.significance.level A number indicating the minimum significance level of the most signficiant marker gene for a cluster to pass filtering. Set to NULL to identify the threshold automatically [default = NULL].
 #' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = FALSE]
+#' @param tol A number indicating the tolerance parameter for segmentation [default = 1e-05]
+#' @param maxit.glm A number indicating the maximum number of iterations for inner IWLS iterations in segmentation [default = NULL]
+#' @param h A number indicating the positive factor by which to increment the breakpoint updates in segmentation [default = 1.25]
+#' @param quant A boolean (TRUE or FALSE), which indicates if quantiles (TRUE) or equally spaced values (FALSE) should be used for starting values in segmentation [default = FALSE]
 #'
 #' @return A vector of valid barcodes
 #' @import segmented
 #' @export
 
 #finding valid barcodes
-expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
+expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-05, maxit.glm = NULL, h = 1.25, quant = FALSE) {
   ## evaluate arguments
   # min.significant argument
   if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
@@ -52,6 +56,18 @@ expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significan
   
   # plot argument
   if(class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
+
+  # h argument
+  if(class(h) != "numeric" | h < 0) stop('h needs to be a numeric greater than 0', call. = FALSE)
+
+  # maxit.glm argument
+  if((class(maxit.glm) != "NULL" & class(maxit.glm) != "numeric") | (class(maxit.glm) == "numeric" & maxit.glm < 0)) { stop('maxit.glm needs to be NULL or a numeric greater than 0', call. = FALSE)  }
+  
+  # tol argument
+  if(class(tol) != "numeric" | tol < 0) stop('tol needs to be a numeric greater than 0', call. = FALSE)
+  
+  # quant argument
+  if(class(quant) != "logical") stop('quant needs to be a boolean (TRUE or FALSE)', call. = FALSE)
 
   # model function to return error if necessary
   model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e){NA})}
