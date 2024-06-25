@@ -23,7 +23,7 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
+quality_filter = function(metrics, mito_fixed = NULL, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
   ## evaluate arguments
   # metrics matrix
   if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
@@ -50,6 +50,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   rownames(metrics) <- metrics$barcode
   
   ## Mitochondrial filtering
+  if (!is.null(mito_fixed) & is.numeric(mito_fixed)) {
+    mito <- FALSE
+    mito.threshold <- mito_fixed
+  }
+	
   if (isTRUE(mito) | is.numeric(mito)) {
     if (sum(colnames(metrics) %in% c("mitochondrial_fraction","logFeatures")) == 2) {  
       if (isTRUE(mito)) {
