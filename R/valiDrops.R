@@ -111,6 +111,14 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
         stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
       }
     }
+    if(length(qc.pass$final) <= 0.5*ncol(filtered_counts)){
+      to_continue <- readline(prompt = "Less than half as many cells detected than in the filtered matrix. Type [Y] if you would like to refilter with a fixed proportion of mitochondrial reads and [N] if not: ")
+      if(to_continue %in% c("N", "No", "n", "no")){
+        stop("Very well. Continuing pipeline.")
+      } else{
+        mito_fixed <- as.numeric(readline(prompt = "What proportion of mitochondrial reads would you like to use: "))
+      }
+    }
   }
       
   if (stageThree) {
