@@ -114,7 +114,7 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
     if (length(qc.pass$final) <= 0.5*ncol(filtered_counts)) {
       to_continue <- readline(prompt = "Less than half as many cells detected than in the filtered matrix.\nType [Y] if you would like to refilter with a fixed proportion of mitochondrial reads and [N] if not: ")
       if (to_continue %in% c("N", "No", "n", "no")) {
-        stop("Very well. Continuing pipeline.")
+        message("Very well. Continuing pipeline.")
       } else{
         if (is.null(mito_fixed)) {
           mito_fixed <- as.numeric(readline(prompt = "Fixed proportion of mitochondrial reads not provided.\nWhat percentage of mitochondrial reads would you like to use: "))
