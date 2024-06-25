@@ -92,12 +92,12 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   ### Clustering
   ## Shallow
   clusters.shallow <- Seurat::FindClusters(snn, verbose=F, res=res.shallow)
-  if (length(unique(clusters.shallow[,1])) == 1){
+  if (length(unique(clusters.shallow[,1])) == 1) {
 	  stop = 0
-	  while(stop == 0){
+	  while(stop == 0) {
 		  res.shallow = res.shallow + 0.1
 		  clusters.shallow <- Seurat::FindClusters(snn, verbose=F, res=res.shallow)
-		  if (length(unique(clusters.shallow[,1])) > 1){
+		  if (length(unique(clusters.shallow[,1])) > 1) {
 			  stop = 1
 		  }
 	  }
@@ -107,17 +107,17 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   # Coarse clustering and processing
   clusters.deep <- as.data.frame(matrix(nrow = length(snn@Dimnames[[1]]), ncol = 20, dimnames = list(snn@Dimnames[[1]], NULL)))
   fails <- numeric(20)
-  for(i in 1:20){
+  for(i in 1:20) {
 	  tryCatch(clusters.deep[,i] <- Seurat::FindClusters(snn, verbose=F, res=i),
 		   error = function(e) {
 			   message(paste0("Limiting deep clustering resolution to ", i))
 			   fails[i] <<- 1
 		   } )
-	  if (fails[i] == 1){
+	  if (fails[i] == 1) {
 		  break()
 	  }
   }
-  if (is.element(1, fails)){
+  if (is.element(1, fails)) {
 	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,(match(1, fails) - 1),by=(match(1, fails) - 1)/20))
   } else{
 	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=seq(1,20,by=1))
@@ -132,17 +132,17 @@ expression_metrics = function(counts, mito, ribo, nfeats = 5000, npcs = 10, k.mi
   # Fine clustering and processing
   clusters.deep <- as.data.frame(matrix(nrow = length(snn@Dimnames[[1]]), ncol = length(fine.res), dimnames = list(snn@Dimnames[[1]], NULL)))
   fails <- numeric(length(fine.res))
-  for(i in 1:length(fine.res)){
+  for(i in 1:length(fine.res)) {
 	  tryCatch(clusters.deep[,i] <- Seurat::FindClusters(snn, verbose=F, res=fine.res[i]),
 		   error = function(e) {
 			   message(paste0("Limiting deep clustering resolution to ", fine.res[i]))
 			   fails[i] <<- 1
 		   } )
-	  if (fails[i] == 1){
+	  if (fails[i] == 1) {
 		  break()
 	  }
   }
-  if (is.element(1, fails)){
+  if (is.element(1, fails)) {
 	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=fine.res[1:match(1, fails) - 1])
   } else{
 	  clusters.deep <- Seurat::FindClusters(snn, verbose=F, res=fine.res)
