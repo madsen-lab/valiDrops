@@ -26,51 +26,51 @@
 expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-50, maxit.glm = 2500, h = 0.01, quant = TRUE) {
   ## evaluate arguments
   # min.significant argument
-  if(class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
+  if (class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
   
   # Validate the mito argument
-  if(!is.null(mito) & !is.numeric(mito) & !is.integer(mito)) {
+  if (!is.null(mito) & !is.numeric(mito) & !is.integer(mito)) {
     stop("The mito argument must be either NULL or a numeric", call. = FALSE) 	  
   }
   
   # Validate the ribo argument
-  if(!is.null(ribo) & !is.numeric(ribo) & !is.integer(ribo)) {
+  if (!is.null(ribo) & !is.numeric(ribo) & !is.integer(ribo)) {
     stop("The ribo argument must be either NULL or a numeric", call. = FALSE) 	  
   }
   
   # min.target.pct argument
-  if(class(min.target.pct) != "numeric" | min.target.pct < 0 | min.target.pct > 1) stop('min.target.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
+  if (class(min.target.pct) != "numeric" | min.target.pct < 0 | min.target.pct > 1) stop('min.target.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
   
   # max.background.pct argument
-  if(class(max.background.pct) != "numeric" | max.background.pct < 0 | max.background.pct > 1) stop('max.background.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
+  if (class(max.background.pct) != "numeric" | max.background.pct < 0 | max.background.pct > 1) stop('max.background.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
   
   # min.diff.pct argument
-  if(class(min.diff.pct) != "numeric" | min.diff.pct < 0 | min.diff.pct > 1) stop('min.diff.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
+  if (class(min.diff.pct) != "numeric" | min.diff.pct < 0 | min.diff.pct > 1) stop('min.diff.pct needs to be a numeric greater than or equal to 0 and less than or equal to 1', call. = FALSE)
   
   # min.significance.level argument
-  if(class(min.significance.level) != "NULL" & class(min.significance.level) != "numeric") { 
+  if (class(min.significance.level) != "NULL" & class(min.significance.level) != "numeric") { 
     stop('min.significance.level needs to be a numeric greater than 0', call. = FALSE)
   } else if (class(min.significance.level) == "numeric") {
     if (min.significance.level < 0) { stop('min.significance.level needs to be a numeric greater than 0', call. = FALSE) }
   }
   
   # plot argument
-  if(class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
+  if (class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
 
   # h argument
-  if(class(h) != "numeric" | h < 0) stop('h needs to be a numeric greater than 0', call. = FALSE)
+  if (class(h) != "numeric" | h < 0) stop('h needs to be a numeric greater than 0', call. = FALSE)
 
   # maxit.glm argument
-  if((class(maxit.glm) != "NULL" & class(maxit.glm) != "numeric") | (class(maxit.glm) == "numeric" & maxit.glm < 0)) { stop('maxit.glm needs to be NULL or a numeric greater than 0', call. = FALSE)  }
+  if ((class(maxit.glm) != "NULL" & class(maxit.glm) != "numeric") | (class(maxit.glm) == "numeric" & maxit.glm < 0)) { stop('maxit.glm needs to be NULL or a numeric greater than 0', call. = FALSE)  }
   
   # tol argument
-  if(class(tol) != "numeric" | tol < 0) stop('tol needs to be a numeric greater than 0', call. = FALSE)
+  if (class(tol) != "numeric" | tol < 0) stop('tol needs to be a numeric greater than 0', call. = FALSE)
   
   # quant argument
-  if(class(quant) != "logical") stop('quant needs to be a boolean (TRUE or FALSE)', call. = FALSE)
+  if (class(quant) != "logical") stop('quant needs to be a boolean (TRUE or FALSE)', call. = FALSE)
 
   # model function to return error if necessary
-  model.significance.level.function <- function(model){result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = quant, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e){NA})}
+  model.significance.level.function <- function(model) {result <- tryCatch({segmented::segmented(model, npsi = 1, control = segmented::seg.control(quant = quant, tol = tol, maxit.glm = maxit.glm, h = h))$psi[2]}, error = function(e) {NA} ) }
   
   # Find threshold on significance level
   if (is.null(min.significance.level)) {
@@ -84,7 +84,7 @@ expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significan
   }
 
   # Stop function if min.significance.level is 0
-  if(min.significance.level == 0){
+  if (min.significance.level == 0) {
     message("Error fitting model. Skipping stage 3 filtering")
     valid.barcodes <- rownames(clusters)
   } else {
