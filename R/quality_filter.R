@@ -26,22 +26,22 @@
 quality_filter = function(metrics, mito_fixed = NULL, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
   ## evaluate arguments
   # metrics matrix
-  if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
+  if (missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
   
   # npsi argument
-  if(floor(npsi) <= 0) stop('npsi needs to be a numeric greater than 0', call. = FALSE)
+  if (floor(npsi) <= 0) stop('npsi needs to be a numeric greater than 0', call. = FALSE)
   
   # dist.threshold argument
-  if(class(dist.threshold) != "numeric" | dist.threshold <= 0) stop('dist.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(dist.threshold) != "numeric" | dist.threshold <= 0) stop('dist.threshold needs to be a numeric greater than 0', call. = FALSE)
   
   # coding.threshold argument
-  if(class(coding.threshold) != "numeric" | coding.threshold <= 0) stop('coding.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(coding.threshold) != "numeric" | coding.threshold <= 0) stop('coding.threshold needs to be a numeric greater than 0', call. = FALSE)
 
   # contrast.threshold argument
-  if(class(contrast.threshold) != "numeric" | contrast.threshold <= 0) stop('contrast.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(contrast.threshold) != "numeric" | contrast.threshold <= 0) stop('contrast.threshold needs to be a numeric greater than 0', call. = FALSE)
   
   # mito.nreps argument
-  if(class(mito.nreps) != "numeric" | mito.nreps <= 0) stop('mito.nreps needs to be a numeric greater than 0', call. = FALSE)
+  if (class(mito.nreps) != "numeric" | mito.nreps <= 0) stop('mito.nreps needs to be a numeric greater than 0', call. = FALSE)
   
   # Create a list for the output
   output <- list()
