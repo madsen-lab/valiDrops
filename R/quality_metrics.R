@@ -32,7 +32,7 @@
 quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto", verbose = FALSE) {
   ## evaluate arguments
   # count matrix
-  if(missing(counts)) {
+  if (missing(counts)) {
     stop('No count matrix was provided', call. = FALSE)
   } else {
     if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
@@ -49,7 +49,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   }
 
   # contrast matrix
-  if(!is.null(contrast)) {
+  if (!is.null(contrast)) {
     if (!any(class(contrast) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Contrast matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
   }
 
@@ -75,7 +75,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
   if (!isTRUE(verbose) & !isFALSE(verbose)) { stop("verbose must be either TRUE or FALSE") }
 
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
-  if(class(counts) == "matrix") { counts = as(counts, "dgCMatrix") }
+  if (class(counts) == "matrix") { counts = as(counts, "dgCMatrix") }
 
   ## create a list for holding the output
   output <- list()
@@ -178,7 +178,7 @@ quality_metrics = function(counts, contrast = NULL, contrast_type = "denominator
     species <-  c("Human", "Mouse","Rat","Zebrafish","Worm","Fly")[best.ds]
     annotation <- colnames(ds[[best.ds]])[best.col]
     if (annotation == "NCBI") { annotation <- "Entrez" }
-    message(paste("Detected sample origin: ", species, ". Detected gene annotation: ", annotation, ". Mapped ", best.sum, "/", nrow(genes), " (", signif((best.sum/nrow(genes))*100,3), "%) of input IDs.", sep=""))
+    message(paste("Detected sample origin: ", species, ". Detected gene annotation: ", annotation, ". Mapped ", best.sum, "/", nrow(genes), " (", signif ((best.sum/nrow(genes))*100,3), "%) of input IDs.", sep=""))
     message(paste("Found ", length(mitogenes), " mitochondrial genes, ", length(ribogenes), " ribosomal genes, and ", length(pcgenes), " protein-coding genes.", sep=""))
   }
 
