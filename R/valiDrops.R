@@ -121,7 +121,7 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
         }
         if (mito_fixed < 1) {mito_fixed <- mito_fixed*100}
         message(paste0("Repeating Step 3: Filtering on quality metrics with ", mito_fixed, "% mitochondrial reads."))
-        qc.pass <- R.utils::withTimeout( {valiDrops::quality_filter(metrics = metrics$metrics, mito_fixed = mito_fixed/100, mito = F, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot, tol = 1e-100, maxit.glm = 10000, h = 1e-5) },
+        qc.pass <- R.utils::withTimeout( {valiDrops::quality_filter(metrics = metrics$metrics, mito = mito_fixed/100, distance = distancel, coding = codingl, contrast = contrastl, mito.nreps = mito.nreps, mito.max = mito.max, npsi = npsi, dist.threshold = dist.threshold, coding.threshold = coding.threshold, contrast.threshold = contrast.threshold, plot = plot, tol = 1e-100, maxit.glm = 10000, h = 1e-5) },
                                    timeout = timeout,
                                    onTimeout = "error")
       }
