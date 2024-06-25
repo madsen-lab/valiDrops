@@ -31,29 +31,29 @@
 rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE) {
   ## evaluate arguments
   # count matrix
-  if(missing(counts)) {
+  if (missing(counts)) {
     stop('No count matrix was provided', call. = FALSE)
   } else {
     if (!any(class(counts) == c("dgTMatrix", "Matrix","matrix", "dgCMatrix","DelayedMatrix"))) { stop('Count matrix has an unacceptable format. Accepted formats: matrix, Matrix, dgTMatrix, dgCMatrix, DelayedMatrix', call. = FALSE) }
   }
   
   # type argument
-  if(!any(type %in% c("Genes","gene","genes", "UMI", "umi","UMIS","umis","UMIs"))) stop('Incorrect input. Did you choose UMI or Genes?', call. = FALSE)
+  if (!any(type %in% c("Genes","gene","genes", "UMI", "umi","UMIS","umis","UMIs"))) stop('Incorrect input. Did you choose UMI or Genes?', call. = FALSE)
   
   # psi.min argument
-  if(class(psi.min) != "numeric" | psi.min <= 0 | psi.min > psi.max) stop('psi.min needs to be a numeric greater than 0 and less than or equal to psi.max ', call. = FALSE)
+  if (class(psi.min) != "numeric" | psi.min <= 0 | psi.min > psi.max) stop('psi.min needs to be a numeric greater than 0 and less than or equal to psi.max ', call. = FALSE)
   
   # psi.max argument
-  if(class(psi.max) != "numeric" | psi.max <= 0 | psi.max < psi.min) stop('psi.max needs to be a numeric greater than 0 and greater than or equal to psi.min ', call. = FALSE)
+  if (class(psi.max) != "numeric" | psi.max <= 0 | psi.max < psi.min) stop('psi.max needs to be a numeric greater than 0 and greater than or equal to psi.min ', call. = FALSE)
   
   # threshold argument
-  if(class(threshold) != "logical") stop('threshold needs to be a boolean (TRUE or FALSE)', call. = FALSE)
+  if (class(threshold) != "logical") stop('threshold needs to be a boolean (TRUE or FALSE)', call. = FALSE)
   
   # plot argument
-  if(class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
+  if (class(plot) != "logical") stop('plot needs to be a boolean (TRUE or FALSE)', call. = FALSE)
   
   ## convert the counts into dgCMatrix if its class() is not dgCMatrix
-  if(class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
+  if (class(counts) != "dgCMatrix") { counts = as(counts, "dgCMatrix") }
   
   ## get the feature type (allowing for spelling variants)
   feature_type <- "UMI"
@@ -129,7 +129,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
   lower <- unique.counts[ which.min(abs(unique.counts$rank  - out$psi[best_bpt,2])),1]
   
   ## output a plot of ranks if requested
-  if (plot){
+  if (plot) {
     plot(y=unique.counts$counts, x=unique.counts$rank, xlab="log Rank", ylab=paste("log ", feature_type, sep=""), pch=16, las=1, col="#CDCDCD20")
     lines(y=c(0,lower),x=c(lower_rank, lower_rank), col = "red")
     lines(y=c(lower,lower),x=c(0, lower_rank), col = "red")
@@ -139,7 +139,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
   }
   
   ## finalize results depending on arguments
-  if(threshold){
+  if (threshold) {
     output = list(ranks = bcranks, lower.threshold = exp(lower))
   } else {
     output = bcranks
