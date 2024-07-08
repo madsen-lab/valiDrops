@@ -91,11 +91,13 @@ valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, statu
   if (length(rank.pass) > 20000) {
     message("More than 20.000 barcodes passed initial filtering. It is like that breakpoint estimation did not work satisfactorily. If it didn't, you can try to increase alpha, alpha.max and/or psi.max in the rank_barcodes() function.")
   }
-  if (length(rank.pass) < ncol(filtered_counts)) {
-    to_continue <- readline("Less barcodes passed ranking than in filtered count matrix. Type [Y] if you would like to continue and [N] if not: ")
-    if (to_continue %in% c("N", "No", "n", "no")) {
-        stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
-      }
+  if (!is.null(filtered_counts)) {
+    if (length(rank.pass) < ncol(filtered_counts)) {
+      to_continue <- readline("Less barcodes passed ranking than in filtered count matrix. Type [Y] if you would like to continue and [N] if not: ")
+      if (to_continue %in% c("N", "No", "n", "no")) {
+          stop("Pipeline terminated by user. Please try again on filtered counts and skip barcode ranking.")
+        }
+    }
   }
   
   ## Subset the counts
