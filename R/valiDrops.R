@@ -18,7 +18,7 @@
 #' @import Seurat
 #' @import SingleCellExperiment
 
-valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, status = TRUE, mito_fixed = NULL, stageThree = TRUE, label_dead = FALSE, plot = TRUE, verbose = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01, timeout = Inf,
+valiDrops = function(counts, filtered_counts = NULL, rank_barcodes = TRUE, status = TRUE, mito_fixed = NULL, stageThree = TRUE, label_dead = FALSE, plot = TRUE, verbose = TRUE, tol = 1e-05, h = 0.01, timeout = Inf,
                     type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE,
                     contrast = NULL, contrast_type = "denominator", species = "auto", annotation = "auto", mito = "auto", ribo = "auto", coding = "auto",
                     mitol = TRUE, distancel = TRUE, codingl = TRUE, contrastl = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3,
