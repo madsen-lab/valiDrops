@@ -14,7 +14,7 @@
 #' @param min.significance.level A number indicating the minimum significance level of the most signficiant marker gene for a cluster to pass filtering. Set to NULL to identify the threshold automatically [default = NULL].
 #' @param plot A boolean (TRUE or FALSE), which indicates if a plot should be returned [default = FALSE]
 #' @param tol A number indicating the tolerance parameter for segmentation [default = 1e-05]
-#' @param maxit.glm A number indicating the maximum number of iterations for inner IWLS iterations in segmentation [default = NULL]
+#' @param maxit.glm A number indicating the maximum number of iterations for inner IWLS iterations in segmentation [default = 2500]
 #' @param h A number indicating the positive factor by which to increment the breakpoint updates in segmentation [default = 1.25]
 #' @param quant A boolean (TRUE or FALSE), which indicates if quantiles (TRUE) or equally spaced values (FALSE) should be used for starting values in segmentation [default = FALSE]
 #'
@@ -23,7 +23,7 @@
 #' @export
 
 #finding valid barcodes
-expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-50, maxit.glm = 2500, h = 0.01, quant = TRUE) {
+expression_filter = function(stats, clusters, mito = 3, ribo = 3, min.significant = 1, min.target.pct = 0.3, max.background.pct = 0.7, min.diff.pct = 0.2, min.de.frac = 0.01, min.significance.level = NULL, plot = FALSE, tol = 1e-05, maxit.glm = 2500, h = 0.01, quant = TRUE) {
   ## evaluate arguments
   # min.significant argument
   if (class(min.significant) != "numeric" | min.significant < 0) stop('min.significant needs to be a numeric greater than or equal to 0', call. = FALSE)
