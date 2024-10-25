@@ -23,25 +23,25 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
   ## evaluate arguments
   # metrics matrix
-  if(missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
+  if (missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
   
   # npsi argument
-  if(floor(npsi) <= 0) stop('npsi needs to be a numeric greater than 0', call. = FALSE)
+  if (floor(npsi) <= 0) stop('npsi needs to be a numeric greater than 0', call. = FALSE)
   
   # dist.threshold argument
-  if(class(dist.threshold) != "numeric" | dist.threshold <= 0) stop('dist.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(dist.threshold) != "numeric" | dist.threshold <= 0) stop('dist.threshold needs to be a numeric greater than 0', call. = FALSE)
   
   # coding.threshold argument
-  if(class(coding.threshold) != "numeric" | coding.threshold <= 0) stop('coding.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(coding.threshold) != "numeric" | coding.threshold <= 0) stop('coding.threshold needs to be a numeric greater than 0', call. = FALSE)
 
   # contrast.threshold argument
-  if(class(contrast.threshold) != "numeric" | contrast.threshold <= 0) stop('contrast.threshold needs to be a numeric greater than 0', call. = FALSE)
+  if (class(contrast.threshold) != "numeric" | contrast.threshold <= 0) stop('contrast.threshold needs to be a numeric greater than 0', call. = FALSE)
   
   # mito.nreps argument
-  if(class(mito.nreps) != "numeric" | mito.nreps <= 0) stop('mito.nreps needs to be a numeric greater than 0', call. = FALSE)
+  if (class(mito.nreps) != "numeric" | mito.nreps <= 0) stop('mito.nreps needs to be a numeric greater than 0', call. = FALSE)
   
   # Create a list for the output
   output <- list()
@@ -49,7 +49,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
   # Set rownames
   rownames(metrics) <- metrics$barcode
   
-  ## Mitochondrial filtering
+  ## Mitochondrial filtering	
   if (isTRUE(mito) | is.numeric(mito)) {
     if (sum(colnames(metrics) %in% c("mitochondrial_fraction","logFeatures")) == 2) {  
       if (isTRUE(mito)) {
@@ -84,11 +84,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         stop <- 0
         metrics.subsample <- metrics[ sample(1:nrow(metrics), sample.size),]
         model <- lm(logFeatures ~ mitochondrial_fraction, data = metrics.subsample)
-        seg <- segmented::segmented(model, npsi = psi)
+        seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
         if (min(seg$psi[,2]) > mito.max) { stop <- 1 }
           while (stop == 1) {
             psi <- psi + 1
-            seg <- segmented::segmented(model, npsi = psi)
+            seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
             if (psi >= 5 | min(seg$psi[,2]) <= mito.max) { stop <- 0 }
           }		
           mito.thresholds <- c(mito.thresholds, min(seg$psi[,2]))
@@ -124,7 +124,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
       # Segmented model
       model <- lm(logFeatures ~ logUMIs, data = metrics)
       while (floor(npsi) >= 1) {
-	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi)))
+	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi), control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h)))
 	if (class(out)[1] == "segmented") {
 	  break
 	} else {

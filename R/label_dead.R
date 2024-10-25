@@ -445,7 +445,7 @@ results <- bplapply(pseudolist, BPPARAM = bpparam, FUN = function(x) {
   
   # Return final labels
   return(list(labels = as.character(metrics$label), flag = as.character(flag)))
-})
+} )
 	  
 	  # Extract results
 	  labels.df <- as.data.frame(matrix(ncol=rep, nrow=nrow(metrics)))
@@ -456,7 +456,7 @@ results <- bplapply(pseudolist, BPPARAM = bpparam, FUN = function(x) {
 	}
 	  
 	  # Finalize labels
-	  metrics$label <- apply(labels.df,1,FUN = function(x) { ifelse(sum(x == "live") >= n.min, "live", ifelse(sum(x == "dead") >= n.min, "dead", "uncertain"))})
+	  metrics$label <- apply(labels.df,1,FUN = function(x) { ifelse(sum(x == "live") >= n.min, "live", ifelse(sum(x == "dead") >= n.min, "dead", "uncertain")) } )
 	  metrics$qc <- metrics$original.qc
 	  
 	  # Finalize flag
