@@ -14,6 +14,9 @@
 #' @param coding.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
 #' @param contrast.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
 #' @param plot A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].
+#' @param tol A number indicating the tolerance parameter for segmentation [default = 1e-05]
+#' @param h A number indicating the positive factor by which to increment the breakpoint updates in segmentation [default = 0.01]
+#' @param quant A boolean (TRUE or FALSE), which indicates if quantiles (TRUE) or equally spaced values (FALSE) should be used for starting values in segmentation [default = FALSE]
 #'
 #' @return A list of vectors containing the mitochondrial threshold, number of barcodes filtered at each step and the final barcodes that pass QC filtering.
 #' @export
@@ -23,7 +26,7 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-50, maxit.glm = 2500, h = 0.01) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-05, h = 0.01, quant = FALSE) {
   ## evaluate arguments
   # metrics matrix
   if (missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
@@ -84,11 +87,11 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
         stop <- 0
         metrics.subsample <- metrics[ sample(1:nrow(metrics), sample.size),]
         model <- lm(logFeatures ~ mitochondrial_fraction, data = metrics.subsample)
-        seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
+        seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, h = h, quant = quant))
         if (min(seg$psi[,2]) > mito.max) { stop <- 1 }
           while (stop == 1) {
             psi <- psi + 1
-            seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h))
+            seg <- segmented::segmented(model, npsi = psi, control = segmented::seg.control(quant = TRUE, tol = tol, h = h, quant = quant))
             if (psi >= 5 | min(seg$psi[,2]) <= mito.max) { stop <- 0 }
           }		
           mito.thresholds <- c(mito.thresholds, min(seg$psi[,2]))
@@ -124,7 +127,7 @@ quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, 
       # Segmented model
       model <- lm(logFeatures ~ logUMIs, data = metrics)
       while (floor(npsi) >= 1) {
-	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi), control = segmented::seg.control(quant = TRUE, tol = tol, maxit.glm = maxit.glm, h = h)))
+	out <- suppressWarnings(segmented::segmented(model, npsi = floor(npsi), control = segmented::seg.control(quant = TRUE, tol = tol, h = h, quant = quant)))
 	if (class(out)[1] == "segmented") {
 	  break
 	} else {
