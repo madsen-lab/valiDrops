@@ -15,7 +15,7 @@
 #' @param contrast.threshold The maximum number of standard deviations around the mean that passes the QC [default = 5].
 #' @param plot A boolean (TRUE or FALSE) indicating whether or not to produce plots [default = TRUE].
 #' @param tol A number indicating the tolerance parameter for segmentation [default = 1e-05]
-#' @param h A number indicating the positive factor by which to increment the breakpoint updates in segmentation [default = 0.01]
+#' @param h A number indicating the positive factor by which to increment the breakpoint updates in segmentation [default = 1.25]
 #' @param quant A boolean (TRUE or FALSE), which indicates if quantiles (TRUE) or equally spaced values (FALSE) should be used for starting values in segmentation [default = FALSE]
 #'
 #' @return A list of vectors containing the mitochondrial threshold, number of barcodes filtered at each step and the final barcodes that pass QC filtering.
@@ -26,7 +26,7 @@
 #' @import robustbase
 #' @import segmented
 
-quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-05, h = 0.01, quant = FALSE) {
+quality_filter = function(metrics, mito = TRUE, distance = TRUE, coding = TRUE, contrast = FALSE, mito.nreps = 10, mito.max = 0.3, npsi = 3, dist.threshold = 5, coding.threshold = 3, contrast.threshold = 3, plot = TRUE, tol = 1e-05, h = 1.25, quant = FALSE) {
   ## evaluate arguments
   # metrics matrix
   if (missing(metrics)) { stop('No metrics data frame was provided', call. = FALSE) }
