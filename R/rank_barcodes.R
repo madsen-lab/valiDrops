@@ -28,7 +28,7 @@
 #' @import zoo
 #' @import Matrix
 
-rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE) {
+rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha = 0.001, alpha.max = 0.05, boot = 10, factor = 1.5, threshold = TRUE, plot = TRUE, segmented.error.statement  = "psi starting values too close each other or at the boundaries") {
   ## evaluate arguments
   # count matrix
   if(missing(counts)) {
@@ -98,7 +98,7 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
       rmse[counter,3] <- counter
       models[[counter]] <- out
       counter <- counter + 1
-    } else if (any(grepl("psi values too close", out[[1]]))) {
+    } else if (any(grepl(segmented.error.statement, out[[1]], ignore.case = TRUE))) {
 		  stop = 0
 		  while (stop == 0) {
 			  curr.alpha <- curr.alpha + alpha
@@ -113,7 +113,17 @@ rank_barcodes = function(counts, type = "UMI", psi.min = 2, psi.max = 5, alpha =
 				    stop = 1
 			    }
 		    }
-	    }
+	    } else {stop(paste0(
+    "In the 'rank_barcodes' function:\n",
+    "Breakpoint analysis could not be performed.\n",
+    "Change the 'segmented_error_statement' parameter to:\n",
+    "'", sub("\\..*", "", out[[1]]), "'\n\n",
+    "The full error from the 'segmented' function was:\n",
+    "......................................\n",
+    out[[1]], "\n",
+    "......................................\n\n",
+    "Alternatively, visit the source code of 'segmented' fuction to see what the error message has been changed to.\n",
+    "The source code can be found here: https://github.com/cran/segmented/blob/master/R/seg.lm.fit.r"))} 
     }
 
   ## select the best model (within a factor of the smallest RMSE)
